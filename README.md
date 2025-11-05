@@ -53,17 +53,33 @@ The system will automatically detect common column name variations.
 - **Next.js 14** - React framework
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Styling
+- **Supabase** - Database and backend
 - **SheetJS (xlsx)** - Excel file parsing
 - **jsbarcode** - Barcode generation
 - **react-to-print** - PDF export
 
 ## Deployment
 
-This application is configured for deployment on Vercel:
+This application is configured for deployment on Vercel with Supabase integration.
 
-1. Push your code to GitHub
-2. Import the repository in Vercel
-3. Deploy automatically
+### Quick Deploy
+
+1. **Set up Supabase** (see [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions)
+   - Create a Supabase project
+   - Run the migration SQL to create the `products` table
+   - Get your Supabase URL and anon key
+
+2. **Deploy to Vercel**
+   - Go to [vercel.com/new](https://vercel.com/new)
+   - Import your GitHub repository
+   - Add environment variables:
+     - `NEXT_PUBLIC_SUPABASE_URL`
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - Click Deploy
+
+3. **Your app is live!** 🎉
+
+For detailed step-by-step instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ## License
 
