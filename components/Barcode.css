@@ -1,0 +1,12 @@
+.barcode-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.barcode-svg {
+  max-width: 100%;
+  height: auto;
+}
+

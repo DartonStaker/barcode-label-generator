@@ -1,0 +1,36 @@
+{
+  "name": "barcode-label-generator",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.0.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "xlsx": "^0.18.5",
+    "jsbarcode": "^3.11.5",
+    "@react-pdf/renderer": "^3.1.14",
+    "react-to-print": "^2.14.15",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "@supabase/supabase-js": "^2.38.4",
+    "@supabase/ssr": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5",
+    "tailwindcss": "^3.3.0",
+    "postcss": "^8",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.4"
+  }
+}
+
