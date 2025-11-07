@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import { parseExcelFile, Product } from '@/lib/excelParser';
 import ProductList from '@/components/ProductList';
 import { saveProductsToSupabase, getProductsFromSupabase } from '@/lib/supabase/products';
 
 export default function Home() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -134,16 +136,30 @@ export default function Home() {
     }
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    router.push('/login');
+  };
+
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Barcode Label Generator
-          </h1>
-          <p className="text-gray-600">
-            Upload your Excel price list to generate barcode labels matching the LSA-65 template layout
-          </p>
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Barcode Label Generator
+            </h1>
+            <p className="text-gray-600">
+              Upload your Excel price list to generate barcode labels matching the LSA-65 template layout
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
+          >
+            Sign Out
+          </button>
         </div>
 
         {/* File Upload Section */}

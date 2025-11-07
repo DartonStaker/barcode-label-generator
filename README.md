@@ -10,6 +10,7 @@ A web application for generating barcode labels from Excel price list data, matc
 - 🎨 Multiple template options (LSA-65 and custom)
 - 📐 Configurable labels per page
 - 🔄 Bottom-to-top, left-to-right label arrangement
+- 🔐 Simple admin sign-in gate before accessing label tools
 - ✨ Modern, user-friendly interface
 
 ## Getting Started
@@ -92,11 +93,21 @@ This application is configured for deployment on Vercel with Supabase integratio
    - Add environment variables:
      - `NEXT_PUBLIC_SUPABASE_URL`
      - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+      - `ADMIN_EMAIL` (defaults to `apparelydotcoza@gmail.com` if unset)
+      - `ADMIN_PASSWORD` (defaults to `@MatCod1!@` if unset)
    - Click Deploy
 
 3. **Your app is live!** 🎉
 
 For detailed step-by-step instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+## Authentication
+
+- The app now requires signing in before use.
+- Default credentials (unless overridden by environment variables):
+  - Email: `apparelydotcoza@gmail.com`
+  - Password: `@MatCod1!@`
+- Update `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables in production to customize access.
 
 ## License
 
