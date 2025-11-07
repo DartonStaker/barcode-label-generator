@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import { parseExcelFile, Product } from '@/lib/excelParser';
 import ProductList from '@/components/ProductList';
 import { saveProductsToSupabase, getProductsFromSupabase } from '@/lib/supabase/products';
+import AppBrand from '@/components/AppBrand';
 
 export default function Home() {
   const router = useRouter();
@@ -144,13 +145,12 @@ export default function Home() {
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Barcode Label Generator
-            </h1>
-            <p className="text-gray-600">
-              Upload your Excel price list to generate barcode labels matching the LSA-65 template layout
+        <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
+            <AppBrand />
+            <p className="max-w-xl text-gray-600">
+              Upload your Excel price list to generate barcode labels that align with the LSA-65 template
+              layout and keep your retail displays consistent.
             </p>
           </div>
           <button

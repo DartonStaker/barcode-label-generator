@@ -1,0 +1,19 @@
+<svg width="360" height="120" viewBox="0 0 360 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="paint0_linear" x1="36" y1="12" x2="324" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E83679"/>
+      <stop offset="1" stop-color="#B41652"/>
+    </linearGradient>
+    <linearGradient id="paint1_linear" x1="180" y1="78" x2="180" y2="105" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#333333"/>
+      <stop offset="1" stop-color="#111111"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="336" height="96" rx="24" fill="url(#paint0_linear)" opacity="0.08"/>
+  <circle cx="60" cy="60" r="24" fill="#E83679" opacity="0.18"/>
+  <path d="M60 36C50 36 42 44 42 54C42 62 47 68 54 72C60 76 62 84 60 92C70 92 78 84 78 74C78 66 73 60 66 56C60 52 58 44 60 36Z" fill="#E83679" opacity="0.35"/>
+  <text x="120" y="66" text-anchor="start" font-family="'Trebuchet MS', 'Gill Sans', 'Segoe UI', sans-serif" font-weight="700" font-size="44" fill="#C71E5A" letter-spacing="0.02em">Apparely</text>
+  <rect x="120" y="78" width="180" height="4" rx="2" fill="#C71E5A" opacity="0.65"/>
+  <text x="120" y="103" text-anchor="start" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-weight="600" font-size="16" fill="#2D2D2D" letter-spacing="0.18em">CUSTOM MARKET BARCODE GENERATOR</text>
+</svg>
+

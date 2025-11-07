@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import AppBrand from '@/components/AppBrand';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,6 +44,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <AppBrand align="center" className="mb-6" />
         <h1 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Sign In</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
