@@ -152,7 +152,10 @@ export default function LabelTemplate({ product, index, template }: LabelTemplat
   // Handle description - if it contains "/", split it
   if (description && description.includes('/')) {
     // Products like "O/selection" - split at "/"
-    const parts = description.split('/').map(s => s.trim()).filter(s => s);
+    const parts = description
+      .split('/')
+      .map((segment: string) => segment.trim())
+      .filter((segment: string) => segment);
     if (parts.length >= 2) {
       // If we have brand, use it; otherwise first part might be brand
       line1 = brandName || '';
