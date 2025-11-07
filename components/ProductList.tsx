@@ -442,7 +442,7 @@ export default function ProductList({ products }: ProductListProps) {
               <div>Labels/Page: <strong>{labelsPerPage || maxLabelsPerPage}</strong></div>
               <div>Total Pages: <strong>{totalPages}</strong></div>
               <div>Will Generate: <strong>{actualPages} page{actualPages !== 1 ? 's' : ''}</strong></div>
-              <div>Label Size: <strong>{selectedTemplate.labelWidth}" × {selectedTemplate.labelHeight}"</strong></div>
+              <div>Label Size: <strong>{selectedTemplate.labelWidth}&quot; × {selectedTemplate.labelHeight}&quot;</strong></div>
             </div>
           </div>
         </div>
@@ -518,7 +518,7 @@ export default function ProductList({ products }: ProductListProps) {
           </button>
         </div>
             <div className="text-xs text-gray-500 italic">
-              💡 <strong>IMPORTANT:</strong> In the print dialog, set margins to "None" (or "Minimum"), scale to "100%" or "Actual size", and disable headers/footers. The browser print preview may show extra margins that won't appear in the actual print/PDF.
+              💡 <strong>IMPORTANT:</strong> In the print dialog, set margins to &quot;None&quot; (or &quot;Minimum&quot;), scale to &quot;100%&quot; or &quot;Actual size&quot;, and disable headers/footers. The browser print preview may show extra margins that won&apos;t appear in the actual print/PDF.
             </div>
       </div>
 

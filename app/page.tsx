@@ -221,11 +221,11 @@ export default function Home() {
               Instructions
             </h3>
             <ul className="list-disc list-inside space-y-1 text-blue-800">
-              <li>Upload your Excel file (Summer 2025 Price List.xls)</li>
+              <li>Upload your Excel file (barcode-import-template.xlsx)</li>
               <li>The system will automatically detect product codes, descriptions, and prices</li>
               <li>Barcodes will be generated for each product</li>
               <li>Labels will match the LSA-65 template layout</li>
-              <li>Click "Print/Export PDF" to generate printable labels</li>
+              <li>Click &quot;Print/Export PDF&quot; to generate printable labels</li>
             </ul>
           </div>
         )}
