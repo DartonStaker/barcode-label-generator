@@ -5,9 +5,11 @@ A web application for generating barcode labels from Excel price list data, matc
 ## Features
 
 - 📊 Upload and parse Excel files (.xlsx, .xls)
-- 🏷️ Generate barcode labels automatically
+- 🏷️ Generate barcode labels automatically in grid layouts
 - 📄 Export labels as PDF for printing
-- 🎨 Template layout matching LSA-65 format
+- 🎨 Multiple template options (LSA-65 and custom)
+- 📐 Configurable labels per page
+- 🔄 Bottom-to-top, left-to-right label arrangement
 - ✨ Modern, user-friendly interface
 
 ## Getting Started
@@ -34,9 +36,24 @@ npm run dev
 ## Usage
 
 1. **Upload Excel File**: Click "Upload Excel File" and select your Summer 2025 Price List.xls file
-2. **Review Products**: The system will automatically parse and display all products
-3. **Generate Labels**: Barcodes are automatically generated for each product
-4. **Print/Export**: Click "Print/Export PDF" to generate printable labels
+2. **Select Template**: Choose from available templates (LSA-65 or Custom)
+3. **Configure Labels**: Set how many labels per page (defaults to maximum)
+4. **Review Products**: The system will automatically parse and display all products in a grid
+5. **Generate Labels**: Labels are arranged bottom-to-top, left-to-right
+6. **Print/Export**: Click "Print/Export PDF" to generate printable labels
+
+## Label Templates
+
+### LSA-65 Template
+- **Layout**: 7 rows × 4 columns (28 labels per page)
+- **Page Size**: 8.5" × 11" (Letter)
+- **Label Size**: ~2" × 1.57" (auto-calculated to fit grid)
+- **Arrangement**: Bottom-to-top, left-to-right
+
+### Custom Template
+- Configurable grid layout
+- Adjustable label dimensions
+- Flexible spacing options
 
 ## File Format
 
@@ -84,4 +101,3 @@ For detailed step-by-step instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
 ## License
 
 MIT
-

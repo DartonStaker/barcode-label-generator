@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { parseExcelFile, Product } from '@/lib/excelParser';
 import ProductList from '@/components/ProductList';
 import { saveProductsToSupabase, getProductsFromSupabase } from '@/lib/supabase/products';
@@ -48,15 +49,69 @@ export default function Home() {
         setError('No products found in the Excel file. Please check the file format.');
       } else {
         setProducts(parsedProducts);
-        // Save to Supabase
+        // Save to Supabase (will fail silently if not configured)
         await saveProductsToDatabase(parsedProducts);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to parse Excel file');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to parse Excel file';
+      setError(errorMessage);
       console.error('Error parsing Excel:', err);
+      console.error('File details:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: new Date(file.lastModified)
+      });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDownloadTemplate = () => {
+    const workbook = XLSX.utils.book_new();
+
+    const templateHeader = ['Barcode Numbers', '', '', 'Description', '', 'Price (R)', '', '', '', '', '', '', ''];
+    const blankRow = new Array(templateHeader.length).fill('');
+    const templateData = [templateHeader];
+
+    for (let i = 0; i < 100; i++) {
+      templateData.push([...blankRow]);
+    }
+
+    const templateSheet = XLSX.utils.aoa_to_sheet(templateData);
+    templateSheet['!cols'] = [
+      { wch: 20 },
+      { wch: 3 },
+      { wch: 3 },
+      { wch: 35 },
+      { wch: 3 },
+      { wch: 12 },
+      { wch: 3 },
+      { wch: 3 },
+      { wch: 3 },
+      { wch: 3 },
+      { wch: 3 },
+      { wch: 3 },
+      { wch: 3 },
+    ];
+
+    const instructionsData = [
+      ['How to use this template'],
+      ['1. Enter each product on a new row starting from row 2.'],
+      ['2. Column A (Barcode Numbers): 12-13 digit barcode or product code.'],
+      ['3. Column D (Description): Product name or description that appears on the label.'],
+      ['4. Column F (Price (R)): Selling price (numbers or values like "R 65.00").'],
+      ['5. Leave other columns blank—they are reserved to match the original Summer 2025 Price List layout.'],
+      ['6. Save the file and import it using the Upload Excel File control on the main page.'],
+    ];
+
+    const instructionsSheet = XLSX.utils.aoa_to_sheet(instructionsData);
+    instructionsSheet['!cols'] = [{ wch: 110 }];
+
+    XLSX.utils.book_append_sheet(workbook, templateSheet, 'Template');
+    XLSX.utils.book_append_sheet(workbook, instructionsSheet, 'Instructions');
+
+    XLSX.writeFile(workbook, 'barcode-import-template.xlsx');
   };
 
   const saveProductsToDatabase = async (productsToSave: Product[]) => {
@@ -94,12 +149,21 @@ export default function Home() {
         {/* File Upload Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="mb-4">
-            <label
-              htmlFor="excel-upload"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Upload Excel File (Summer 2025 Price List.xls)
-            </label>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <label
+                htmlFor="excel-upload"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Upload Excel File (barcode-import-template.xlsx)
+              </label>
+              <button
+                type="button"
+                onClick={handleDownloadTemplate}
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              >
+                Download Import Template
+              </button>
+            </div>
             <input
               ref={fileInputRef}
               id="excel-upload"

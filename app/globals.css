@@ -26,3 +26,30 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+/* Select dropdown styling */
+select {
+  color: #1f2937; /* Dark gray text */
+  background-color: white;
+}
+
+select option {
+  color: #1f2937; /* Dark gray text for options */
+  background-color: white;
+  padding: 8px;
+}
+
+/* Selected option styling */
+select option:checked {
+  background-color: #3b82f6; /* Blue background */
+  color: white; /* White text on selected */
+}
+
+/* Hover state for options */
+select option:hover {
+  background-color: #dbeafe; /* Light blue on hover */
+  color: #1f2937;
+}
+
+/* Borders are visible in both preview and print for grid guidelines */
+/* Borders are added via inline styles in components and className in LabelTemplate */
+
