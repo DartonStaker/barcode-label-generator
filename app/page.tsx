@@ -150,7 +150,7 @@ export default function Home() {
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
             <AppBrand />
             <p className="max-w-xl text-gray-600">
-              Upload your Excel price list to generate barcode labels that align with the LSA-65 template
+              Upload your Excel price list to generate barcode labels that align with your desired barcode template
               layout and keep your retail displays consistent.
             </p>
           </div>
@@ -241,7 +241,7 @@ export default function Home() {
               <li>Upload your Excel file (barcode-import-template.xlsx)</li>
               <li>The system will automatically detect product codes, descriptions, and prices</li>
               <li>Barcodes will be generated for each product</li>
-              <li>Labels will match the LSA-65 template layout</li>
+              <li>Labels will match your selected barcode template layout</li>
               <li>Click &quot;Print/Export PDF&quot; to generate printable labels</li>
             </ul>
           </div>
