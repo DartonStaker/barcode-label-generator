@@ -6,11 +6,14 @@ import LabelGrid from './LabelGrid';
 import { AVAILABLE_TEMPLATES, LabelTemplate as LabelTemplateConfig, getTemplateById, getLabelPosition, calculateLabelPositions } from '@/lib/labelTemplates';
 import { useReactToPrint } from 'react-to-print';
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
+import { ENCODING_OPTIONS, EncodingType } from '@/lib/encodingOptions';
 import NextImage from 'next/image';
 
 interface ProductListProps {
   products: Product[];
   initialTemplateId?: string;
+  encodingType: EncodingType;
+  onChangeEncoding: () => void;
 }
 
 // Helper functions for unit conversion
@@ -43,9 +46,11 @@ const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
 
 const MAX_IMAGES_PER_LABEL = 5;
 
-export default function ProductList({ products, initialTemplateId }: ProductListProps) {
+export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || 'lsa-65');
+  const encodingInfo = ENCODING_DETAILS[encodingType];
+  const barcodeFormat = encodingInfo.barcodeFormat;
   
   // Update selected template when initialTemplateId changes
   useEffect(() => {
@@ -869,6 +874,25 @@ export default function ProductList({ products, initialTemplateId }: ProductList
 
   return (
     <div className="w-full" style={{ width: '100%', maxWidth: 'none', overflow: 'visible' }}>
+      <div className="mb-6">
+        <div className="flex flex-col gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-blue-800">
+              Encoding: {encodingInfo.label}
+            </p>
+            <p className="text-sm text-blue-700">{encodingInfo.description}</p>
+            <p className="text-xs text-blue-600 mt-1">{encodingInfo.helperText}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onChangeEncoding}
+            className="inline-flex items-center justify-center rounded-md border border-blue-400 bg-white px-4 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:bg-blue-100"
+          >
+            Change Encoding
+          </button>
+        </div>
+      </div>
+
       {/* Controls */}
       <div className="mb-6 bg-white rounded-lg shadow-md p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1823,6 +1847,7 @@ export default function ProductList({ products, initialTemplateId }: ProductList
                   activeImageId={activeImageId}
                   draggingImageId={draggingImageId}
                   onImageDrop={handleImageDrop}
+                  barcodeFormat={barcodeFormat}
                 />
               </div>
             </>

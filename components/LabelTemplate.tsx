@@ -12,6 +12,7 @@ interface LabelTemplateProps {
   product?: Product;
   index?: number;
   template?: LabelTemplateConfig;
+  barcodeFormat?: 'CODE128' | 'EAN13';
   imageOverlays?: LabelImage[];
   onSelectLabel?: (labelIndex: number) => void;
   isActive?: boolean;
@@ -27,6 +28,7 @@ export default function LabelTemplate({
   product,
   index,
   template,
+  barcodeFormat,
   imageOverlays,
   onSelectLabel,
   isActive,
@@ -42,6 +44,7 @@ export default function LabelTemplate({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const containerWidth = containerSize.width;
   const containerHeight = containerSize.height;
+  const format: 'CODE128' | 'EAN13' = barcodeFormat ?? 'CODE128';
 
   const clampValue = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
 
@@ -475,8 +478,26 @@ export default function LabelTemplate({
   }
 
   const priceDisplay = formattedPrice || '';
-  const codeDisplay = code || '';
-  const barcodeValue = codeDisplay || '0000000000000';
+  const rawCode = (code || '').trim();
+  const hasRawCode = rawCode.length > 0;
+  let barcodeValue = '';
+  if (hasRawCode) {
+    if (format === 'EAN13') {
+      const digitsOnly = rawCode.replace(/\D/g, '');
+      if (digitsOnly.length === 13) {
+        barcodeValue = digitsOnly;
+      } else if (digitsOnly.length > 0) {
+        barcodeValue = digitsOnly.padStart(13, '0').slice(-13);
+      }
+    } else {
+      barcodeValue = rawCode;
+    }
+  }
+  const displayCode = hasRawCode
+    ? format === 'EAN13'
+      ? barcodeValue || rawCode
+      : rawCode
+    : '';
   
   return (
     <div
@@ -643,7 +664,7 @@ export default function LabelTemplate({
             color: '#000000', // Pure black for maximum contrast
           }}
         >
-          {codeDisplay}
+          {displayCode}
         </div>
 
         {/* 3. Barcode Graphic - Centered, moved down slightly */}
@@ -660,9 +681,10 @@ export default function LabelTemplate({
             alignItems: 'center',
           }}
         >
-          {codeDisplay ? (
+          {barcodeValue ? (
             <Barcode 
               value={barcodeValue} 
+              format={format}
               width={barcodeWidth}
               height={barcodeHeight}
               displayValue={false}

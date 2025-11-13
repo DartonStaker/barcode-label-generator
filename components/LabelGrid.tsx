@@ -20,6 +20,7 @@ interface LabelGridProps {
   activeImageId?: string | null;
   draggingImageId?: string | null;
   onImageDrop?: (labelIndex: number, imageId: string, position: { x: number; y: number }) => void;
+  barcodeFormat?: 'CODE128' | 'EAN13';
 }
 
 export default function LabelGrid({
@@ -37,6 +38,7 @@ export default function LabelGrid({
   activeImageId,
   draggingImageId,
   onImageDrop,
+  barcodeFormat = 'CODE128',
 }: LabelGridProps) {
   // Maximum slots available on a single physical sheet
   const maxLabelsPerPage = template.columns * template.rows;
@@ -357,6 +359,7 @@ export default function LabelGrid({
                   product={product}
                   index={absoluteIndex}
                   template={template}
+                  barcodeFormat={barcodeFormat}
                   imageOverlays={overlayImages}
                   onSelectLabel={onLabelClick}
                   isActive={!!isActiveLabel}

@@ -7,8 +7,9 @@ import { parseExcelFile, Product } from '@/lib/excelParser';
 import ProductList from '@/components/ProductList';
 import { saveProductsToSupabase, getProductsFromSupabase } from '@/lib/supabase/products';
 import AppBrand from '@/components/AppBrand';
+import { ENCODING_OPTIONS, EncodingType } from '@/lib/encodingOptions';
 
-type ViewMode = 'menu' | 'custom' | 'default';
+type ViewMode = 'menu' | 'encoding' | 'custom' | 'default';
 
 export default function Home() {
   const router = useRouter();
@@ -18,11 +19,22 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [encodingType, setEncodingType] = useState<EncodingType | null>(null);
+  const [pendingViewMode, setPendingViewMode] = useState<ViewMode | null>(null);
 
   // Load products from Supabase on mount
   useEffect(() => {
     loadProductsFromDatabase();
   }, []);
+
+  useEffect(() => {
+    if ((viewMode === 'default' || viewMode === 'custom') && encodingType === null) {
+      if (pendingViewMode !== viewMode) {
+        setPendingViewMode(viewMode);
+      }
+      setViewMode('encoding');
+    }
+  }, [viewMode, encodingType, pendingViewMode]);
 
   const loadProductsFromDatabase = async () => {
     try {
@@ -74,6 +86,8 @@ export default function Home() {
   };
 
   const handleDownloadTemplate = () => {
+    const encodingKey: EncodingType = encodingType ?? 'code128';
+    const encodingMeta = ENCODING_OPTIONS[encodingKey];
     const workbook = XLSX.utils.book_new();
 
     const templateHeader = ['Barcode Numbers', 'Brand', '', 'Description', '', 'Price (R)', '', '', '', '', '', '', ''];
@@ -103,13 +117,7 @@ export default function Home() {
 
     const instructionsData = [
       ['How to use this template'],
-      ['1. Enter each product on a new row starting from row 2.'],
-      ['2. Column A (Barcode Numbers): 12-13 digit barcode or product code.'],
-      ['3. Column B (Brand): Brand name that appears above the description on the label.'],
-      ['4. Column D (Description): Product name or description that appears on the label.'],
-      ['5. Column F (Price (R)): Selling price (numbers or values like "R 65.00").'],
-      ['6. Leave other columns blank—they are reserved to match the original Summer 2025 Price List layout.'],
-      ['7. Save the file and import it using the Upload Excel File control on the main page.'],
+      ...encodingMeta.instructions.map((line) => [line]),
     ];
 
     const instructionsSheet = XLSX.utils.aoa_to_sheet(instructionsData);
@@ -118,7 +126,7 @@ export default function Home() {
     XLSX.utils.book_append_sheet(workbook, templateSheet, 'Template');
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, 'Instructions');
 
-    XLSX.writeFile(workbook, 'barcode-import-template.xlsx');
+    XLSX.writeFile(workbook, encodingMeta.templateFileName);
   };
 
   const saveProductsToDatabase = async (productsToSave: Product[]) => {
@@ -146,6 +154,13 @@ export default function Home() {
     router.push('/login');
   };
 
+  const handleEncodingSelect = (type: EncodingType) => {
+    setEncodingType(type);
+    const nextView = pendingViewMode ?? 'default';
+    setViewMode(nextView);
+    setPendingViewMode(null);
+  };
+
   const handleBackToMenu = () => {
     setViewMode('menu');
     setProducts([]);
@@ -153,6 +168,7 @@ export default function Home() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    setPendingViewMode(null);
   };
 
   // Menu Selector View
@@ -184,7 +200,10 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
               {/* Option 1: Custom Barcode Creation */}
               <button
-                onClick={() => setViewMode('custom')}
+                onClick={() => {
+                  setPendingViewMode('custom');
+                  setViewMode('encoding');
+                }}
                 className="group relative p-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-lg text-left"
               >
                 <div className="flex items-start gap-4">
@@ -207,7 +226,10 @@ export default function Home() {
 
               {/* Option 2: Customize from Default Template */}
               <button
-                onClick={() => setViewMode('default')}
+                onClick={() => {
+                  setPendingViewMode('default');
+                  setViewMode('encoding');
+                }}
                 className="group relative p-8 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border-2 border-green-200 hover:border-green-400 transition-all hover:shadow-lg text-left"
               >
                 <div className="flex items-start gap-4">
@@ -233,6 +255,115 @@ export default function Home() {
       </main>
     );
   }
+
+  if (viewMode === 'encoding') {
+    const nextLabel =
+      pendingViewMode === 'custom'
+        ? 'Custom Barcode Creation'
+        : pendingViewMode === 'default'
+        ? 'Default Template Workflow'
+        : 'Barcode Workflow';
+    const encodingCards: Array<{
+      key: EncodingType;
+      badge: string;
+      supporting: string;
+    }> = [
+      {
+        key: 'ean13',
+        badge: 'Retail / Takealot',
+        supporting: 'Use 13-digit numeric EAN-13 codes—perfect for consumer products scanned at retail or Takealot.',
+      },
+      {
+        key: 'code128',
+        badge: 'Flexible / Amazon',
+        supporting: 'Use alphanumeric CODE-128 values—ideal for Amazon FBA, warehouse picking, and internal logistics.',
+      },
+    ];
+
+    return (
+      <main className="min-h-screen p-8 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
+              <AppBrand />
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
+            >
+              Sign Out
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Choose Your Barcode Type</h2>
+            <p className="text-gray-600 text-center mb-6">
+              Select the encoding that matches your retail or logistics requirements. You can switch encodings at any time.
+            </p>
+            <p className="text-sm text-center text-blue-600 mb-8">Next step: {nextLabel}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {encodingCards.map((option) => {
+                const optionMeta = ENCODING_OPTIONS[option.key];
+                const isSelected = encodingType === option.key;
+                return (
+                  <button
+                    key={option.key}
+                    onClick={() => handleEncodingSelect(option.key)}
+                    className={`group relative p-6 rounded-lg border-2 transition-all text-left ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50 shadow-lg'
+                        : 'border-gray-200 bg-white hover:border-blue-400 hover:shadow-lg'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg group-hover:bg-blue-700 transition-colors">
+                        {optionMeta.label.split('-')[1]}
+                      </div>
+                      <div className="flex-1">
+                        <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 mb-2">
+                          {option.badge}
+                        </span>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{optionMeta.label}</h3>
+                        <p className="text-gray-600 text-sm mb-2">{optionMeta.description}</p>
+                        <p className="text-gray-500 text-sm">{option.supporting}</p>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="absolute top-3 right-3 text-xs font-semibold text-blue-600">Currently selected</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={handleBackToMenu}
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Back to Menu
+              </button>
+              {encodingType && (
+                <button
+                  type="button"
+                  onClick={() => handleEncodingSelect(encodingType)}
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Continue with {ENCODING_OPTIONS[encodingType].label}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const effectiveEncoding: EncodingType = encodingType ?? 'code128';
+  const encodingMeta = ENCODING_OPTIONS[effectiveEncoding];
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -279,14 +410,14 @@ export default function Home() {
                   htmlFor="excel-upload"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Upload Excel File (barcode-import-template.xlsx)
+                  Upload Excel File ({encodingMeta.templateFileName})
                 </label>
                 <button
                   type="button"
                   onClick={handleDownloadTemplate}
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
-                  Download Import Template
+                  Download {encodingMeta.label} Import Template
                 </button>
               </div>
               <input
@@ -336,14 +467,30 @@ export default function Home() {
         {/* Products Display - Only for default mode */}
         {viewMode === 'default' && products.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <ProductList products={products} initialTemplateId={undefined} />
+            <ProductList
+              products={products}
+              initialTemplateId={undefined}
+              encodingType={effectiveEncoding}
+              onChangeEncoding={() => {
+                setPendingViewMode('default');
+                setViewMode('encoding');
+              }}
+            />
           </div>
         )}
 
         {/* Custom Template View - Show ProductList with custom template selected (with or without products) */}
         {viewMode === 'custom' && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <ProductList products={products} initialTemplateId="custom" />
+            <ProductList
+              products={products}
+              initialTemplateId="custom"
+              encodingType={effectiveEncoding}
+              onChangeEncoding={() => {
+                setPendingViewMode('custom');
+                setViewMode('encoding');
+              }}
+            />
           </div>
         )}
 
@@ -354,7 +501,7 @@ export default function Home() {
               Instructions
             </h3>
             <ul className="list-disc list-inside space-y-1 text-blue-800">
-              <li>Upload your Excel file (barcode-import-template.xlsx)</li>
+              <li>Upload your Excel file ({encodingMeta.templateFileName})</li>
               <li>The system will automatically detect product codes, descriptions, and prices</li>
               <li>Barcodes will be generated for each product</li>
               <li>Labels will match your selected barcode template layout</li>
