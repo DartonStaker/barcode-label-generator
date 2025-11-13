@@ -8,8 +8,11 @@ import ProductList from '@/components/ProductList';
 import { saveProductsToSupabase, getProductsFromSupabase } from '@/lib/supabase/products';
 import AppBrand from '@/components/AppBrand';
 
+type ViewMode = 'menu' | 'custom' | 'default';
+
 export default function Home() {
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<ViewMode>('menu');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -143,96 +146,209 @@ export default function Home() {
     router.push('/login');
   };
 
+  const handleBackToMenu = () => {
+    setViewMode('menu');
+    setProducts([]);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Menu Selector View
+  if (viewMode === 'menu') {
+    return (
+      <main className="min-h-screen p-8 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
+              <AppBrand />
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
+            >
+              Sign Out
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
+              CUSTOM MARKET BARCODE GENERATOR
+            </h1>
+            <p className="text-gray-600 text-center mb-8">
+              Choose how you want to create your barcode labels
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              {/* Option 1: Custom Barcode Creation */}
+              <button
+                onClick={() => setViewMode('custom')}
+                className="group relative p-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-lg text-left"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:bg-blue-700 transition-colors">
+                    1
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      Custom Barcode Creation
+                    </h2>
+                    <p className="text-gray-600 text-sm">
+                      Start with a blank custom template. Configure all label specifications including margins, pitches, dimensions, and layout from scratch.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 text-blue-600 font-medium text-sm group-hover:text-blue-700">
+                  Get Started →
+                </div>
+              </button>
+
+              {/* Option 2: Customize from Default Template */}
+              <button
+                onClick={() => setViewMode('default')}
+                className="group relative p-8 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border-2 border-green-200 hover:border-green-400 transition-all hover:shadow-lg text-left"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:bg-green-700 transition-colors">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      Customize from Default Template
+                    </h2>
+                    <p className="text-gray-600 text-sm">
+                      Upload your Excel file and choose from pre-configured label templates (2 UP, 4 UP, 6 UP, 10 UP, 18 UP, 32 UP, 45 UP, 65 UP) or customize an existing template.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 text-green-600 font-medium text-sm group-hover:text-green-700">
+                  Get Started →
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
             <AppBrand />
-            <p className="max-w-xl text-gray-600">
-              Upload your Excel price list to generate barcode labels that align with your desired barcode template
-              layout and keep your retail displays consistent.
-            </p>
+            {viewMode === 'default' && (
+              <p className="max-w-xl text-gray-600">
+                Upload your Excel price list to generate barcode labels that align with your desired barcode template
+                layout and keep your retail displays consistent.
+              </p>
+            )}
+            {viewMode === 'custom' && (
+              <p className="max-w-xl text-gray-600">
+                Configure your custom label template with precise specifications for margins, pitches, dimensions, and layout.
+              </p>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
-          >
-            Sign Out
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleBackToMenu}
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Back to Menu
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
 
-        {/* File Upload Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="mb-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <label
-                htmlFor="excel-upload"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Upload Excel File (barcode-import-template.xlsx)
-              </label>
-              <button
-                type="button"
-                onClick={handleDownloadTemplate}
-                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-              >
-                Download Import Template
-              </button>
+        {/* File Upload Section - Show for both modes */}
+        {(viewMode === 'default' || viewMode === 'custom') && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="mb-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <label
+                  htmlFor="excel-upload"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Upload Excel File (barcode-import-template.xlsx)
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  Download Import Template
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                id="excel-upload"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  cursor-pointer"
+                disabled={loading}
+              />
             </div>
-            <input
-              ref={fileInputRef}
-              id="excel-upload"
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileUpload}
-              className="block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-full file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100
-                cursor-pointer"
-              disabled={loading}
-            />
-          </div>
 
-          {loading && (
-            <div className="text-blue-600 font-medium">Processing file...</div>
-          )}
+            {loading && (
+              <div className="text-blue-600 font-medium">Processing file...</div>
+            )}
 
-          {saving && (
-            <div className="text-green-600 font-medium">Saving to database...</div>
-          )}
+            {saving && (
+              <div className="text-green-600 font-medium">Saving to database...</div>
+            )}
 
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800">{error}</p>
-            </div>
-          )}
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800">{error}</p>
+              </div>
+            )}
 
-          {products.length > 0 && (
-            <div className="mt-4">
-              <button
-                onClick={handleClear}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Clear & Upload New File
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Products Display */}
-        {products.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <ProductList products={products} />
+            {products.length > 0 && (
+              <div className="mt-4">
+                <button
+                  onClick={handleClear}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Clear & Upload New File
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Instructions */}
-        {products.length === 0 && !loading && (
+        {/* Products Display - Only for default mode */}
+        {viewMode === 'default' && products.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <ProductList products={products} initialTemplateId={undefined} />
+          </div>
+        )}
+
+        {/* Custom Template View - Show ProductList with custom template selected (with or without products) */}
+        {viewMode === 'custom' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <ProductList products={products} initialTemplateId="custom" />
+          </div>
+        )}
+
+        {/* Instructions - Only show for default mode */}
+        {viewMode === 'default' && products.length === 0 && !loading && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-blue-900 mb-2">
               Instructions

@@ -8,18 +8,155 @@ import { useReactToPrint } from 'react-to-print';
 
 interface ProductListProps {
   products: Product[];
+  initialTemplateId?: string;
 }
 
-export default function ProductList({ products }: ProductListProps) {
+// Helper functions for unit conversion
+const cmToInches = (cm: number): number => cm / 2.54;
+const inchesToCm = (inches: number): number => inches * 2.54;
+
+// Load saved custom templates from localStorage
+const loadSavedCustomTemplates = (): LabelTemplateConfig[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('customLabelTemplates');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (error) {
+    console.error('Error loading saved custom templates:', error);
+  }
+  return [];
+};
+
+// Save custom templates to localStorage
+const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('customLabelTemplates', JSON.stringify(templates));
+  } catch (error) {
+    console.error('Error saving custom templates:', error);
+  }
+};
+
+export default function ProductList({ products, initialTemplateId }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('lsa-65');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || 'lsa-65');
+  
+  // Update selected template when initialTemplateId changes
+  useEffect(() => {
+    if (initialTemplateId) {
+      setSelectedTemplateId(initialTemplateId);
+    }
+  }, [initialTemplateId]);
   const [labelsPerPage, setLabelsPerPage] = useState<number | undefined>(undefined);
   const [maxPages, setMaxPages] = useState<number | undefined>(1); // Default to 1 page
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
     new Set() // Default: all products deselected
   );
+  
+  // Custom template configuration state (defaults match Tower W225 example)
+  const [customTemplateConfig, setCustomTemplateConfig] = useState({
+    labelName: '',
+    topMargin: 1.67, // cm (Tower W225 example)
+    sideMargin: 0.56, // cm (Tower W225 example)
+    verticalPitch: 1.26, // cm (Tower W225 example)
+    horizontalPitch: 5.08, // cm (Tower W225 example)
+    pageSize: 'A4',
+    pageWidth: 21.0, // cm (A4 width)
+    labelHeight: 1.11, // cm (Tower W225 example)
+    labelWidth: 4.6, // cm (Tower W225 example)
+    numberAcross: 4,
+    numberDown: 21,
+    pageHeight: 29.7, // cm (A4 height)
+  });
+  
+  // Saved custom templates
+  const [savedCustomTemplates, setSavedCustomTemplates] = useState<LabelTemplateConfig[]>([]);
+  
+  // Load saved templates on mount
+  useEffect(() => {
+    const saved = loadSavedCustomTemplates();
+    setSavedCustomTemplates(saved);
+  }, []);
 
-  const selectedTemplate = getTemplateById(selectedTemplateId) || AVAILABLE_TEMPLATES[0];
+  // Get all available templates (including saved custom ones)
+  const allTemplates = [...AVAILABLE_TEMPLATES, ...savedCustomTemplates];
+  
+  // Enhanced getTemplateById that searches all templates
+  const getAllTemplateById = (id: string): LabelTemplateConfig | undefined => {
+    return allTemplates.find(t => t.id === id);
+  };
+  
+  // Create template from custom config
+  const createTemplateFromConfig = (): LabelTemplateConfig => {
+    const pageWidthIn = cmToInches(customTemplateConfig.pageWidth);
+    const pageHeightIn = cmToInches(customTemplateConfig.pageHeight);
+    const labelWidthIn = cmToInches(customTemplateConfig.labelWidth);
+    const labelHeightIn = cmToInches(customTemplateConfig.labelHeight);
+    const topMarginIn = cmToInches(customTemplateConfig.topMargin);
+    const sideMarginIn = cmToInches(customTemplateConfig.sideMargin);
+    const horizontalPitchIn = cmToInches(customTemplateConfig.horizontalPitch);
+    const verticalPitchIn = cmToInches(customTemplateConfig.verticalPitch);
+    
+    // Calculate gaps from pitches
+    const gapHorizontal = horizontalPitchIn - labelWidthIn;
+    const gapVertical = verticalPitchIn - labelHeightIn;
+    
+    return {
+      id: `custom-${Date.now()}`,
+      name: customTemplateConfig.labelName || 'Custom Template',
+      description: `${customTemplateConfig.numberDown} rows × ${customTemplateConfig.numberAcross} columns (${customTemplateConfig.numberDown * customTemplateConfig.numberAcross} labels per page) - Custom template`,
+      labelWidth: labelWidthIn,
+      labelHeight: labelHeightIn,
+      columns: customTemplateConfig.numberAcross,
+      rows: customTemplateConfig.numberDown,
+      pageWidth: pageWidthIn,
+      pageHeight: pageHeightIn,
+      marginTop: topMarginIn,
+      marginBottom: topMarginIn, // Use top margin as default for bottom
+      marginLeft: sideMarginIn,
+      marginRight: sideMarginIn,
+      gapHorizontal: Math.max(0, gapHorizontal),
+      gapVertical: Math.max(0, gapVertical),
+      horizontalPitch: horizontalPitchIn,
+      verticalPitch: verticalPitchIn,
+    };
+  };
+  
+  // Handle saving custom template
+  const handleSaveCustomTemplate = () => {
+    if (!customTemplateConfig.labelName.trim()) {
+      alert('Please enter a label name');
+      return;
+    }
+    
+    const newTemplate = createTemplateFromConfig();
+    newTemplate.name = customTemplateConfig.labelName;
+    newTemplate.id = `custom-${customTemplateConfig.labelName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+    
+    const updated = [...savedCustomTemplates, newTemplate];
+    setSavedCustomTemplates(updated);
+    saveCustomTemplates(updated);
+    
+    // Select the newly saved template
+    setSelectedTemplateId(newTemplate.id);
+    setLabelsPerPage(undefined);
+    
+    alert(`Template "${customTemplateConfig.labelName}" saved successfully!`);
+  };
+  
+  // Update selected template when custom config changes (if custom is selected)
+  useEffect(() => {
+    if (selectedTemplateId === 'custom') {
+      // Create a temporary template from config for preview
+      // This will be used for rendering
+    }
+  }, [customTemplateConfig, selectedTemplateId]);
+  
+  const selectedTemplate = selectedTemplateId === 'custom' 
+    ? createTemplateFromConfig()
+    : (getAllTemplateById(selectedTemplateId) || allTemplates[0]);
   const maxLabelsPerPage = selectedTemplate.columns * selectedTemplate.rows;
   
   // Calculate effective labels per page early so it can be used in CSS generation
@@ -325,24 +462,372 @@ export default function ProductList({ products }: ProductListProps) {
               onChange={(e) => {
                 const newValue = e.target.value;
                 setSelectedTemplateId(newValue);
-                const template = getTemplateById(newValue);
-                if (template) {
-                  setLabelsPerPage(undefined); // Reset to max
-                }
+                setLabelsPerPage(undefined); // Reset to max
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer text-gray-900"
               style={{ color: '#1f2937' }}
             >
-              {AVAILABLE_TEMPLATES.map((template) => (
+              {allTemplates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name} ({template.rows}×{template.columns})
                 </option>
               ))}
+              <option value="custom">Custom Template (Configure Below)</option>
             </select>
             <p className="text-xs text-gray-500 mt-1">
               {selectedTemplate.description}
             </p>
           </div>
+
+          {/* Custom Template Configuration Form */}
+          {selectedTemplateId === 'custom' && (
+            <div className="md:col-span-4 mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Custom Label Template Configuration</h3>
+              
+              {/* Visual Preview */}
+              <div className="mb-6 p-4 bg-white rounded-lg border border-gray-300">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Preview</h4>
+                <div className="relative border-2 border-gray-400 bg-white overflow-visible" style={{ 
+                  width: '100%', 
+                  maxWidth: '600px',
+                  aspectRatio: `${customTemplateConfig.pageWidth} / ${customTemplateConfig.pageHeight}`,
+                  margin: '0 auto',
+                  minHeight: '300px'
+                }}>
+                  {/* Page background */}
+                  <div className="absolute inset-0 bg-white">
+                    {/* Top margin indicator */}
+                    <div 
+                      className="absolute left-0 right-0 bg-blue-100 border-b-2 border-blue-400"
+                      style={{ 
+                        height: `${(customTemplateConfig.topMargin / customTemplateConfig.pageHeight) * 100}%`,
+                        top: 0
+                      }}
+                    >
+                      <span className="absolute -top-6 left-0 text-xs text-blue-600 font-medium">Top margin: {customTemplateConfig.topMargin} cm</span>
+                    </div>
+                    
+                    {/* Side margin indicators */}
+                    <div 
+                      className="absolute top-0 bottom-0 bg-blue-100 border-r-2 border-blue-400"
+                      style={{ 
+                        width: `${(customTemplateConfig.sideMargin / customTemplateConfig.pageWidth) * 100}%`,
+                        left: 0
+                      }}
+                    >
+                      <span className="absolute -left-20 top-1/2 -translate-y-1/2 text-xs text-blue-600 font-medium whitespace-nowrap" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>Side margin: {customTemplateConfig.sideMargin} cm</span>
+                    </div>
+                    
+                    {/* Label grid area */}
+                    <div 
+                      className="absolute bg-gray-50"
+                      style={{
+                        left: `${(customTemplateConfig.sideMargin / customTemplateConfig.pageWidth) * 100}%`,
+                        top: `${(customTemplateConfig.topMargin / customTemplateConfig.pageHeight) * 100}%`,
+                        width: `${((customTemplateConfig.horizontalPitch * customTemplateConfig.numberAcross) / customTemplateConfig.pageWidth) * 100}%`,
+                        height: `${((customTemplateConfig.verticalPitch * customTemplateConfig.numberDown) / customTemplateConfig.pageHeight) * 100}%`
+                      }}
+                    >
+                      {/* Draw label grid */}
+                      {Array.from({ length: customTemplateConfig.numberDown }).map((_, row) => 
+                        Array.from({ length: customTemplateConfig.numberAcross }).map((_, col) => {
+                          const labelLeft = (col * customTemplateConfig.horizontalPitch) / (customTemplateConfig.horizontalPitch * customTemplateConfig.numberAcross) * 100;
+                          const labelTop = (row * customTemplateConfig.verticalPitch) / (customTemplateConfig.verticalPitch * customTemplateConfig.numberDown) * 100;
+                          const labelWidthPct = (customTemplateConfig.labelWidth / (customTemplateConfig.horizontalPitch * customTemplateConfig.numberAcross)) * 100;
+                          const labelHeightPct = (customTemplateConfig.labelHeight / (customTemplateConfig.verticalPitch * customTemplateConfig.numberDown)) * 100;
+                          
+                          return (
+                            <div
+                              key={`${row}-${col}`}
+                              className="absolute border border-gray-400 bg-white"
+                              style={{
+                                left: `${labelLeft}%`,
+                                top: `${labelTop}%`,
+                                width: `${labelWidthPct}%`,
+                                height: `${labelHeightPct}%`
+                              }}
+                            />
+                          );
+                        })
+                      )}
+                      
+                      {/* Horizontal pitch indicator (arrow) */}
+                      {customTemplateConfig.numberAcross > 1 && (
+                        <div className="absolute" style={{
+                          left: `${(customTemplateConfig.labelWidth / (customTemplateConfig.horizontalPitch * customTemplateConfig.numberAcross)) * 100}%`,
+                          top: '0%',
+                          width: `${((customTemplateConfig.horizontalPitch - customTemplateConfig.labelWidth) / (customTemplateConfig.horizontalPitch * customTemplateConfig.numberAcross)) * 100}%`,
+                          height: '100%'
+                        }}>
+                          <div className="absolute top-0 left-0 right-0 h-1 bg-green-500"></div>
+                          <div className="absolute top-0 left-0 w-0 h-0 border-t-4 border-t-green-500 border-r-4 border-r-transparent"></div>
+                          <div className="absolute top-0 right-0 w-0 h-0 border-t-4 border-t-green-500 border-l-4 border-l-transparent"></div>
+                          <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-green-600 font-medium whitespace-nowrap bg-white px-1">
+                            Horizontal pitch: {customTemplateConfig.horizontalPitch} cm
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Vertical pitch indicator (arrow) */}
+                      {customTemplateConfig.numberDown > 1 && (
+                        <div className="absolute" style={{
+                          left: '0%',
+                          top: `${(customTemplateConfig.labelHeight / (customTemplateConfig.verticalPitch * customTemplateConfig.numberDown)) * 100}%`,
+                          height: `${((customTemplateConfig.verticalPitch - customTemplateConfig.labelHeight) / (customTemplateConfig.verticalPitch * customTemplateConfig.numberDown)) * 100}%`,
+                          width: '100%'
+                        }}>
+                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-green-500"></div>
+                          <div className="absolute top-0 left-0 w-0 h-0 border-l-4 border-l-green-500 border-b-4 border-b-transparent"></div>
+                          <div className="absolute bottom-0 left-0 w-0 h-0 border-l-4 border-l-green-500 border-t-4 border-t-transparent"></div>
+                          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -left-20 text-xs text-green-600 font-medium whitespace-nowrap bg-white px-1" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+                            Vertical pitch: {customTemplateConfig.verticalPitch} cm
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Label dimensions indicator (highlighted first label) */}
+                      <div 
+                        className="absolute border-2 border-red-500 bg-red-100 bg-opacity-30"
+                        style={{
+                          left: 0,
+                          top: 0,
+                          width: `${(customTemplateConfig.labelWidth / (customTemplateConfig.horizontalPitch * customTemplateConfig.numberAcross)) * 100}%`,
+                          height: `${(customTemplateConfig.labelHeight / (customTemplateConfig.verticalPitch * customTemplateConfig.numberDown)) * 100}%`
+                        }}
+                      >
+                        <div className="absolute -right-12 top-0 bg-red-500 text-white text-xs px-2 py-1 font-medium whitespace-nowrap">
+                          Width: {customTemplateConfig.labelWidth} cm
+                        </div>
+                        <div className="absolute left-0 -bottom-8 bg-red-500 text-white text-xs px-2 py-1 font-medium whitespace-nowrap">
+                          Height: {customTemplateConfig.labelHeight} cm
+                        </div>
+                      </div>
+                      
+                      {/* Number across indicator */}
+                      <div 
+                        className="absolute -bottom-8 left-0 right-0 text-center"
+                      >
+                        <span className="text-xs text-gray-600 font-medium bg-white px-2">
+                          Number across: {customTemplateConfig.numberAcross}
+                        </span>
+                      </div>
+                      
+                      {/* Number down indicator */}
+                      <div 
+                        className="absolute -right-8 top-0 bottom-0 flex items-center"
+                      >
+                        <span className="text-xs text-gray-600 font-medium whitespace-nowrap bg-white px-2" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+                          Number down: {customTemplateConfig.numberDown}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 text-xs text-gray-600 text-center space-y-1">
+                  <p className="font-medium">Page: {customTemplateConfig.pageWidth} cm × {customTemplateConfig.pageHeight} cm</p>
+                  <p className="font-medium">Total Labels: {customTemplateConfig.numberAcross * customTemplateConfig.numberDown}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Label Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Label Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customTemplateConfig.labelName}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, labelName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    placeholder="e.g., Tower W225 Mini Label"
+                  />
+                </div>
+
+                {/* Top Margin */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Top Margin (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.topMargin}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, topMargin: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Side Margin */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Side Margin (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.sideMargin}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, sideMargin: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Vertical Pitch */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vertical Pitch (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.verticalPitch}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, verticalPitch: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Horizontal Pitch */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Horizontal Pitch (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.horizontalPitch}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, horizontalPitch: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Page Size */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Page Size
+                  </label>
+                  <select
+                    value={customTemplateConfig.pageSize}
+                    onChange={(e) => {
+                      const pageSize = e.target.value;
+                      let pageWidth = customTemplateConfig.pageWidth;
+                      let pageHeight = customTemplateConfig.pageHeight;
+                      
+                      if (pageSize === 'A4') {
+                        pageWidth = 21.0;
+                        pageHeight = 29.7;
+                      } else if (pageSize === 'Letter') {
+                        pageWidth = 21.59;
+                        pageHeight = 27.94;
+                      }
+                      
+                      setCustomTemplateConfig({ ...customTemplateConfig, pageSize, pageWidth, pageHeight });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  >
+                    <option value="Custom">Custom</option>
+                    <option value="A4">A4</option>
+                    <option value="Letter">Letter</option>
+                  </select>
+                </div>
+
+                {/* Page Width */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Page Width (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.pageWidth}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, pageWidth: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    disabled={customTemplateConfig.pageSize !== 'Custom'}
+                  />
+                </div>
+
+                {/* Label Height */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Label Height (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.labelHeight}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, labelHeight: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Label Width */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Label Width (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.labelWidth}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, labelWidth: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Number Across */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number Across
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={customTemplateConfig.numberAcross}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, numberAcross: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Number Down */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number Down
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={customTemplateConfig.numberDown}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, numberDown: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  />
+                </div>
+
+                {/* Page Height */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Page Height (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={customTemplateConfig.pageHeight}
+                    onChange={(e) => setCustomTemplateConfig({ ...customTemplateConfig, pageHeight: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    disabled={customTemplateConfig.pageSize !== 'Custom'}
+                  />
+                </div>
+              </div>
+              
+              {/* Save Button */}
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={handleSaveCustomTemplate}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Save Custom Template
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Labels Per Page */}
           <div>
