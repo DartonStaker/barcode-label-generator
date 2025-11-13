@@ -46,6 +46,8 @@ const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
 
 const MAX_IMAGES_PER_LABEL = 5;
 
+const ENCODING_DETAILS = ENCODING_OPTIONS;
+
 export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || 'lsa-65');
@@ -759,7 +761,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
   });
 
   const noProducts = products.length === 0;
-
+  
   // If no products selected or labelsPerPage is 0, don't generate any labels
   // Note: We still continue to calculate values for display, but productsToShow will be empty
   
@@ -1652,8 +1654,8 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                 </div>
               )}
             </div>
-          </div>
         </div>
+      </div>
 
       {/* Header with Print Button */}
       <div className="mb-4">
