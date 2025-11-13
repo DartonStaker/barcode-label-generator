@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import Image from 'next/image';
 import Barcode from './Barcode';
 import { Product } from '@/lib/excelParser';
 import { LabelTemplate as LabelTemplateConfig } from '@/lib/labelTemplates';
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
+import { FieldLayout, LabelFieldKey, FieldPlacement } from '@/lib/fieldLayout';
 import { Rnd } from 'react-rnd';
 
 interface LabelTemplateProps {
@@ -13,6 +14,9 @@ interface LabelTemplateProps {
   index?: number;
   template?: LabelTemplateConfig;
   barcodeFormat?: 'CODE128' | 'EAN13';
+  fieldLayout: FieldLayout;
+  isFieldEditing?: boolean;
+  onFieldLayoutChange?: (field: LabelFieldKey, placement: FieldPlacement) => void;
   imageOverlays?: LabelImage[];
   onSelectLabel?: (labelIndex: number) => void;
   isActive?: boolean;
@@ -29,6 +33,9 @@ export default function LabelTemplate({
   index,
   template,
   barcodeFormat,
+  fieldLayout,
+  isFieldEditing = false,
+  onFieldLayoutChange,
   imageOverlays,
   onSelectLabel,
   isActive,
@@ -498,6 +505,137 @@ export default function LabelTemplate({
       ? barcodeValue || rawCode
       : rawCode
     : '';
+
+  const emitFieldLayoutChange = useCallback(
+    (field: LabelFieldKey, placement: FieldPlacement) => {
+      onFieldLayoutChange?.(field, placement);
+    },
+    [onFieldLayoutChange]
+  );
+
+  const handleFieldTransform = useCallback(
+    (field: LabelFieldKey, xPx: number, yPx: number, widthPx: number, heightPx: number) => {
+      if (!onFieldLayoutChange || containerWidth === 0 || containerHeight === 0) return;
+
+      let widthFraction = clampValue(widthPx / containerWidth, 0.05, 1);
+      let heightFraction = clampValue(heightPx / containerHeight, 0.05, 1);
+      let xFraction = clampValue(xPx / containerWidth, 0, 1);
+      let yFraction = clampValue(yPx / containerHeight, 0, 1);
+
+      if (xFraction + widthFraction > 1) {
+        xFraction = 1 - widthFraction;
+      }
+      if (yFraction + heightFraction > 1) {
+        yFraction = 1 - heightFraction;
+      }
+
+      emitFieldLayoutChange(field, {
+        x: xFraction,
+        y: yFraction,
+        width: widthFraction,
+        height: heightFraction,
+      });
+    },
+    [clampValue, containerHeight, containerWidth, emitFieldLayoutChange, onFieldLayoutChange]
+  );
+
+  const renderField = useCallback(
+    (
+      field: LabelFieldKey,
+      content: ReactNode,
+      {
+        justify = 'flex-start',
+        align = 'center',
+        className,
+      }: { justify?: 'flex-start' | 'center' | 'flex-end'; align?: 'flex-start' | 'center' | 'flex-end'; className?: string } = {}
+    ) => {
+      const placement = fieldLayout[field];
+      if (!placement) return null;
+
+      const left = placement.x * 100;
+      const top = placement.y * 100;
+      const widthPercent = placement.width * 100;
+      const heightPercent = placement.height * 100;
+
+      if (isFieldEditing && containerWidth > 0 && containerHeight > 0 && onFieldLayoutChange) {
+        const widthPx = placement.width * containerWidth;
+        const heightPx = placement.height * containerHeight;
+        const xPx = placement.x * containerWidth;
+        const yPx = placement.y * containerHeight;
+
+        return (
+          <Rnd
+            key={`field-${field}`}
+            bounds="parent"
+            size={{ width: widthPx, height: heightPx }}
+            position={{ x: xPx, y: yPx }}
+            onDragStart={() => onSelectLabel?.(labelIndex)}
+            onDragStop={(_, data) => {
+              const latestPlacement = fieldLayout[field] ?? placement;
+              const latestWidth = latestPlacement.width * containerWidth;
+              const latestHeight = latestPlacement.height * containerHeight;
+              handleFieldTransform(field, data.x, data.y, latestWidth, latestHeight);
+            }}
+            onResizeStop={(_, __, ref, ___, position) => {
+              handleFieldTransform(field, position.x, position.y, ref.offsetWidth, ref.offsetHeight);
+            }}
+            enableResizing={{
+              top: true,
+              right: true,
+              bottom: true,
+              left: true,
+              topRight: true,
+              bottomRight: true,
+              bottomLeft: true,
+              topLeft: true,
+            }}
+          >
+            <div
+              className={className}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: align,
+                justifyContent: justify,
+                padding: '4px',
+                boxSizing: 'border-box',
+                backgroundColor: 'rgba(255,255,255,0.85)',
+                border: '1px dashed rgba(59, 130, 246, 0.6)',
+                borderRadius: '4px',
+                cursor: 'move',
+              }}
+              onMouseDown={() => onSelectLabel?.(labelIndex)}
+            >
+              {content}
+            </div>
+          </Rnd>
+        );
+      }
+
+      return (
+        <div
+          key={`field-${field}`}
+          className={className}
+          style={{
+            position: 'absolute',
+            left: `${left}%`,
+            top: `${top}%`,
+            width: `${widthPercent}%`,
+            height: `${heightPercent}%`,
+            display: 'flex',
+            alignItems: align,
+            justifyContent: justify,
+            padding: '2px',
+            boxSizing: 'border-box',
+          }}
+        >
+          {content}
+        </div>
+      );
+    },
+    [containerHeight, containerWidth, fieldLayout, handleFieldTransform, isFieldEditing, labelIndex, onFieldLayoutChange, onSelectLabel]
+  );
   
   return (
     <div
@@ -618,139 +756,101 @@ export default function LabelTemplate({
       <div
         className="label-template-content"
         style={{
+          position: 'relative',
           width: '100%',
           height: '100%',
-          padding: padding,
-          fontSize: fontSize,
           fontFamily: 'Arial, sans-serif',
-          display: 'flex',
-          flexDirection: 'column',
           boxSizing: 'border-box',
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          textAlign: 'center',
-          overflow: 'hidden', // Prevent content from spilling outside label bounds
-          color: '#000000', // Default text color to black
-          margin: 0,
-          position: 'relative',
+          overflow: 'hidden',
+          color: '#000000',
           zIndex: 2,
         }}
       >
-        {/* 1. Price at Top - Left aligned, bold */}
-        <div 
-          style={{ 
-            flexShrink: 0,
-            fontSize: priceFontSize,
-            lineHeight: '1.0', // Tighter line height
-            marginBottom: '0px', // Minimal margin
-            fontWeight: 'bold',
-            width: '100%',
-            textAlign: 'left',
-            color: '#000000', // Pure black for maximum contrast
-          }}
-        >
-          {priceDisplay}
-        </div>
-
-        {/* 2. Barcode Number below Price - Centered */}
-        <div 
-          style={{ 
-            flexShrink: 0,
-            fontSize: codeFontSize,
-            lineHeight: '1.0', // Tighter line height
-            marginBottom: '1px', // Reduced margin
-            width: '100%',
-            textAlign: 'center',
-            color: '#000000', // Pure black for maximum contrast
-          }}
-        >
-          {displayCode}
-        </div>
-
-        {/* 3. Barcode Graphic - Centered, moved down slightly */}
-        <div 
-          style={{ 
-            flexShrink: 0,
-            minHeight: 0,
-            marginTop: isSmallLabel ? '1px' : '2px', // Move barcode down slightly
-            marginBottom: '1px',
-            padding: '0',
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          {barcodeValue ? (
-            <Barcode 
-              value={barcodeValue} 
-              format={format}
-              width={barcodeWidth}
-              height={barcodeHeight}
-              displayValue={false}
-            />
-          ) : null}
-        </div>
-
-        {/* Spacer to push description to bottom - reduced to move description up */}
-        <div style={{ flexGrow: 1, minHeight: '1px', maxHeight: isSmallLabel ? '8px' : '12px' }}></div>
-
-        {/* 4. Product Description Line 1 - Below barcode, left aligned, moved up slightly */}
-        {line1 && (
-          <div 
-            style={{ 
-              flexShrink: 0,
-              fontSize: descFontSize,
-              lineHeight: '1.0', // Tighter line height for small labels
-              marginTop: isSmallLabel ? '-2px' : '-3px', // Move description up slightly
-              marginBottom: line2 ? '0px' : '0',
+        {renderField(
+          'price',
+          <div
+            style={{
               width: '100%',
+              fontSize: priceFontSize,
+              lineHeight: 1,
+              fontWeight: 'bold',
               textAlign: 'left',
-              color: '#000000', // Pure black for maximum contrast
-              fontWeight: '500', // Slightly bold for better visibility
-              wordBreak: 'break-word', // Allow wrapping if needed
-              overflowWrap: 'break-word', // Break long words if necessary
+              color: '#000000',
             }}
           >
-            {line1}
+            {priceDisplay || (isFieldEditing ? 'Price' : '')}
+          </div>,
+          { justify: 'flex-start', align: 'flex-start' }
+        )}
+
+        {renderField(
+          'code',
+          <div
+            style={{
+              width: '100%',
+              fontSize: codeFontSize,
+              lineHeight: 1,
+              textAlign: 'center',
+              color: '#000000',
+              wordBreak: 'break-word',
+            }}
+          >
+            {displayCode || (isFieldEditing ? 'Barcode Number' : '')}
+          </div>,
+          { justify: 'center', align: 'center' }
+        )}
+
+        {renderField(
+          'barcode',
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {barcodeValue ? (
+              <Barcode value={barcodeValue} format={format} width={barcodeWidth} height={barcodeHeight} displayValue={false} />
+            ) : isFieldEditing ? (
+              <span className="text-xs text-blue-600">Barcode area</span>
+            ) : null}
+          </div>,
+          { justify: 'center', align: 'center', className: 'field-barcode' }
+        )}
+
+        {renderField(
+          'line1',
+          <div
+            style={{
+              width: '100%',
+              fontSize: descFontSize,
+              lineHeight: 1.05,
+              textAlign: 'left',
+              color: '#000000',
+              fontWeight: 500,
+              wordBreak: 'break-word',
+            }}
+          >
+            {line1 || (isFieldEditing ? 'Brand / Line 1' : '')}
           </div>
         )}
 
-        {/* 5. Product Description Line 2 - Below line 1, left aligned */}
-        {line2 && (
-          <div 
-            style={{ 
-              flexShrink: 0,
-              fontSize: descFontSize,
-              lineHeight: '1.0', // Tighter line height for small labels
+        {renderField(
+          'line2',
+          <div
+            style={{
               width: '100%',
+              fontSize: descFontSize,
+              lineHeight: 1.05,
               textAlign: 'left',
-              color: '#000000', // Pure black for maximum contrast
-              fontWeight: '500', // Slightly bold for better visibility
-              wordBreak: 'break-word', // Allow wrapping if needed
-              overflowWrap: 'break-word', // Break long words if necessary
+              color: '#000000',
+              fontWeight: 500,
+              wordBreak: 'break-word',
             }}
           >
-            {line2}
-          </div>
-        )}
-        
-        {/* Fallback: Show description if no line1 or line2 but description exists */}
-        {!line1 && !line2 && description && (
-          <div 
-            style={{ 
-              flexShrink: 0,
-              fontSize: descFontSize,
-              lineHeight: '1.0', // Tighter line height for small labels
-              width: '100%',
-              textAlign: 'left',
-              color: '#000000', // Pure black for maximum contrast
-              fontWeight: '500', // Slightly bold for better visibility
-              wordBreak: 'break-word', // Allow wrapping if needed
-              overflowWrap: 'break-word', // Break long words if necessary
-            }}
-          >
-            {description}
+            {line2 || (!line1 && description ? description : isFieldEditing ? 'Description / Line 2' : '')}
           </div>
         )}
       </div>

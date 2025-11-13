@@ -4,6 +4,7 @@ import { Product } from '@/lib/excelParser';
 import LabelTemplate from './LabelTemplate';
 import { LabelTemplate as LabelTemplateConfig, calculateLabelPositions, getLabelPosition } from '@/lib/labelTemplates';
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
+import { FieldLayout, FieldPlacement, LabelFieldKey } from '@/lib/fieldLayout';
 
 interface LabelGridProps {
   products: Product[];
@@ -21,6 +22,9 @@ interface LabelGridProps {
   draggingImageId?: string | null;
   onImageDrop?: (labelIndex: number, imageId: string, position: { x: number; y: number }) => void;
   barcodeFormat?: 'CODE128' | 'EAN13';
+  fieldLayout: FieldLayout;
+  isFieldEditing?: boolean;
+  onFieldLayoutChange?: (field: LabelFieldKey, placement: FieldPlacement) => void;
 }
 
 export default function LabelGrid({
@@ -39,6 +43,9 @@ export default function LabelGrid({
   draggingImageId,
   onImageDrop,
   barcodeFormat = 'CODE128',
+  fieldLayout,
+  isFieldEditing = false,
+  onFieldLayoutChange,
 }: LabelGridProps) {
   // Maximum slots available on a single physical sheet
   const maxLabelsPerPage = template.columns * template.rows;
@@ -360,6 +367,9 @@ export default function LabelGrid({
                   index={absoluteIndex}
                   template={template}
                   barcodeFormat={barcodeFormat}
+                  fieldLayout={fieldLayout}
+                  isFieldEditing={isFieldEditing}
+                  onFieldLayoutChange={onFieldLayoutChange}
                   imageOverlays={overlayImages}
                   onSelectLabel={onLabelClick}
                   isActive={!!isActiveLabel}

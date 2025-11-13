@@ -7,6 +7,7 @@ import { AVAILABLE_TEMPLATES, LabelTemplate as LabelTemplateConfig, getTemplateB
 import { useReactToPrint } from 'react-to-print';
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
 import { ENCODING_OPTIONS, EncodingType } from '@/lib/encodingOptions';
+import { DEFAULT_FIELD_LAYOUT, FieldLayout, LabelFieldKey, FieldPlacement } from '@/lib/fieldLayout';
 import NextImage from 'next/image';
 
 interface ProductListProps {
@@ -46,6 +47,11 @@ const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
 
 const MAX_IMAGES_PER_LABEL = 5;
 
+const cloneFieldLayout = (layout: FieldLayout): FieldLayout =>
+  Object.fromEntries(
+    Object.entries(layout).map(([key, placement]) => [key, { ...placement }])
+  ) as FieldLayout;
+
 const ENCODING_DETAILS = ENCODING_OPTIONS;
 
 export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding }: ProductListProps) {
@@ -72,6 +78,8 @@ export default function ProductList({ products, initialTemplateId, encodingType,
   const [activeImageId, setActiveImageId] = useState<string | null>(null);
   const [draggingImageId, setDraggingImageId] = useState<string | null>(null);
   const [imageLimitMessage, setImageLimitMessage] = useState<string | null>(null);
+  const [isFieldEditing, setIsFieldEditing] = useState<boolean>(false);
+  const [fieldLayout, setFieldLayout] = useState<FieldLayout>(() => cloneFieldLayout(DEFAULT_FIELD_LAYOUT));
 
   const clamp = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
 
@@ -398,6 +406,18 @@ export default function ProductList({ products, initialTemplateId, encodingType,
       rotation: 0,
     });
   }, [activeImageId, activeLabelIndex, clamp, getImagesForLabel, handleImageChange]);
+
+  const handleFieldLayoutChange = (field: LabelFieldKey, placement: FieldPlacement) => {
+    setFieldLayout((prev) => ({
+      ...prev,
+      [field]: {
+        x: clamp(placement.x, 0, 1),
+        y: clamp(placement.y, 0, 1),
+        width: clamp(placement.width, 0.05, 1),
+        height: clamp(placement.height, 0.05, 1),
+      },
+    }));
+  };
 
   const activeImages = useMemo(() => {
     return applyImagesToAll ? globalLabelImages : labelImageMap[activeLabelIndex] ?? [];
@@ -892,6 +912,35 @@ export default function ProductList({ products, initialTemplateId, encodingType,
           >
             Change Encoding
           </button>
+        </div>
+      </div>
+
+      <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Field Layout Controls</h3>
+          <p className="text-xs text-gray-600">
+            Toggle to reposition price, barcode, brand, and description directly on the label. Changes apply to every label.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {isFieldEditing && (
+            <button
+              type="button"
+              onClick={() => setFieldLayout(cloneFieldLayout(DEFAULT_FIELD_LAYOUT))}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-100"
+            >
+              Reset Layout
+            </button>
+          )}
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              checked={isFieldEditing}
+              onChange={(event) => setIsFieldEditing(event.target.checked)}
+            />
+            Enable field positioning
+          </label>
         </div>
       </div>
 
