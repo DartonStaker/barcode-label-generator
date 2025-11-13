@@ -1630,7 +1630,6 @@ export default function ProductList({ products, initialTemplateId }: ProductList
             </div>
           </div>
         </div>
-      )}
 
       {/* Header with Print Button */}
       <div className="mb-4">
