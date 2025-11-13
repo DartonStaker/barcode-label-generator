@@ -20,35 +20,6 @@ export interface LabelTemplate {
 
 export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
   {
-    id: 'lsa-65',
-    name: '65 UP Label Template',
-    description: '13 rows x 5 columns (65 labels per page) - Matches physical label sheet with Word dialog pitches',
-    // Physical label sheet measurements (extracted from Word template):
-    // Top margin: 11.59 mm (657 twips), Bottom margin: 10.02 mm (~0.394")
-    // Side margins: 9.4 mm (533 twips)
-    // Label width: 38.2 mm (2166 twips), Label height: 21.2 mm (1201 twips)
-    // Word dialog specifications:
-    // Vertical pitch: 21.2 mm, Horizontal pitch: 38.2 mm
-    // Number across: 5, Number down: 13
-    labelWidth: 1.5034722222, // 2166 twips = 1.503472" (38.19 mm)
-    labelHeight: 0.8340277778, // 1201 twips = 0.834028" (21.18 mm)
-    columns: 5,
-    rows: 13,
-    // Use A4 page size to prevent Chrome from adding margins when printing PDFs
-    // A4: 21 cm x 29.7 cm = 8.26771653543307" x 11.69291338582677"
-    // Content will be scaled to match physical margins
-    pageWidth: 8.26771653543307, // A4 width: 21 cm = exactly 8.26771653543307 inches
-    pageHeight: 11.69291338582677, // A4 height: 29.7 cm = exactly 11.69291338582677 inches
-    marginTop: 0.52, // Additional downward shift so top rows match final adjustments
-    marginBottom: 0.37, // Large upward adjustment (double final nudge) so last row sits cleanly
-    marginLeft: 0.45, // Increased left margin for requested shift
-    marginRight: 0.27, // Reduced right margin so content moves closer to edge
-    gapHorizontal: 0, // Horizontal pitch = label width, so no gap between labels
-    gapVertical: 0, // Vertical pitch = label height, so no gap between labels
-    horizontalPitch: 1.5034722222, // Matches table column width (2166 twips)
-    verticalPitch: 0.8340277778, // Matches table row height (1201 twips)
-  },
-  {
     id: '2-up',
     name: '2 UP Label Template',
     description: '1 column x 2 rows (2 labels per page) - Large format labels',
@@ -180,6 +151,35 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     gapVertical: 0.05,
     horizontalPitch: 1.565,
     verticalPitch: 1.227,
+  },
+  {
+    id: 'lsa-65',
+    name: '65 UP Label Template',
+    description: '13 rows x 5 columns (65 labels per page) - Matches physical label sheet with Word dialog pitches',
+    // Physical label sheet measurements (extracted from Word template):
+    // Top margin: 11.59 mm (657 twips), Bottom margin: 10.02 mm (~0.394")
+    // Side margins: 9.4 mm (533 twips)
+    // Label width: 38.2 mm (2166 twips), Label height: 21.2 mm (1201 twips)
+    // Word dialog specifications:
+    // Vertical pitch: 21.2 mm, Horizontal pitch: 38.2 mm
+    // Number across: 5, Number down: 13
+    labelWidth: 1.5034722222, // 2166 twips = 1.503472" (38.19 mm)
+    labelHeight: 0.8340277778, // 1201 twips = 0.834028" (21.18 mm)
+    columns: 5,
+    rows: 13,
+    // Use A4 page size to prevent Chrome from adding margins when printing PDFs
+    // A4: 21 cm x 29.7 cm = 8.26771653543307" x 11.69291338582677"
+    // Content will be scaled to match physical margins
+    pageWidth: 8.26771653543307, // A4 width: 21 cm = exactly 8.26771653543307 inches
+    pageHeight: 11.69291338582677, // A4 height: 29.7 cm = exactly 11.69291338582677 inches
+    marginTop: 0.52, // Additional downward shift so top rows match final adjustments
+    marginBottom: 0.37, // Large upward adjustment (double final nudge) so last row sits cleanly
+    marginLeft: 0.45, // Increased left margin for requested shift
+    marginRight: 0.27, // Reduced right margin so content moves closer to edge
+    gapHorizontal: 0, // Horizontal pitch = label width, so no gap between labels
+    gapVertical: 0, // Vertical pitch = label height, so no gap between labels
+    horizontalPitch: 1.5034722222, // Matches table column width (2166 twips)
+    verticalPitch: 0.8340277778, // Matches table row height (1201 twips)
   },
   {
     id: 'custom',
