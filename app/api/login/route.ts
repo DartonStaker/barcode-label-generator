@@ -25,8 +25,13 @@ const allowedUsers: AllowedUser[] = [
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const normalizedPassword = typeof password === 'string' ? password.trim() : '';
 
-    const isAuthorized = allowedUsers.some((user) => user.email === email && user.password === password);
+    const isAuthorized = allowedUsers.some(
+      (user) =>
+        user.email.trim().toLowerCase() === normalizedEmail && user.password.trim() === normalizedPassword
+    );
 
     if (isAuthorized) {
       const response = NextResponse.json({ success: true });
