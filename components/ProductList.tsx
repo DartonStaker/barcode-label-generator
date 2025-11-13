@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Product } from '@/lib/excelParser';
 import LabelGrid from './LabelGrid';
 import { AVAILABLE_TEMPLATES, LabelTemplate as LabelTemplateConfig, getTemplateById, getLabelPosition, calculateLabelPositions } from '@/lib/labelTemplates';
 import { useReactToPrint } from 'react-to-print';
+import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
 
 interface ProductListProps {
   products: Product[];
@@ -39,6 +40,8 @@ const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
   }
 };
 
+const MAX_IMAGES_PER_LABEL = 5;
+
 export default function ProductList({ products, initialTemplateId }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || 'lsa-65');
@@ -53,6 +56,380 @@ export default function ProductList({ products, initialTemplateId }: ProductList
   const [maxPages, setMaxPages] = useState<number | undefined>(1); // Default to 1 page
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
     new Set() // Default: all products deselected
+  );
+  const [applyImagesToAll, setApplyImagesToAll] = useState<boolean>(true);
+  const [globalLabelImages, setGlobalLabelImages] = useState<LabelImage[]>([]);
+  const [labelImageMap, setLabelImageMap] = useState<Record<number, LabelImage[]>>({});
+  const [activeLabelIndex, setActiveLabelIndex] = useState<number>(0);
+  const [activeImageId, setActiveImageId] = useState<string | null>(null);
+  const [draggingImageId, setDraggingImageId] = useState<string | null>(null);
+  const [imageLimitMessage, setImageLimitMessage] = useState<string | null>(null);
+
+  const clamp = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
+
+  const generateImageId = useCallback(() => {
+    return `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }, []);
+
+  const normalizeZIndex = useCallback((images: LabelImage[]) => {
+    return images.map((image, index) => ({
+      ...image,
+      zIndex: index + 1,
+    }));
+  }, []);
+
+  const getImagesForLabel = useCallback(
+    (index: number): LabelImage[] => {
+      if (applyImagesToAll) {
+        return globalLabelImages;
+      }
+      return labelImageMap[index] ?? [];
+    },
+    [applyImagesToAll, globalLabelImages, labelImageMap]
+  );
+
+  const setImagesForLabel = useCallback(
+    (index: number, updater: (prev: LabelImage[]) => LabelImage[]) => {
+      setLabelImageMap((prev) => {
+        const current = prev[index] ?? [];
+        const updated = updater(current);
+        return {
+          ...prev,
+          [index]: normalizeZIndex(updated),
+        };
+      });
+    },
+    [normalizeZIndex]
+  );
+
+  const updateGlobalImages = useCallback(
+    (updater: (prev: LabelImage[]) => LabelImage[]) => {
+      setGlobalLabelImages((prev) => normalizeZIndex(updater(prev)));
+    },
+    [normalizeZIndex]
+  );
+
+  const readFileAsDataURL = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
+  const loadImageDimensions = useCallback((src: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        resolve({ width: image.naturalWidth || 1, height: image.naturalHeight || 1 });
+      };
+      image.onerror = () => resolve({ width: 1, height: 1 });
+      image.src = src;
+    });
+  }, []);
+
+  const reorderImagesArray = useCallback(
+    (images: LabelImage[], imageId: string, direction: 'forward' | 'backward' | 'front' | 'back') => {
+      const mutable = images.slice();
+      const index = mutable.findIndex((image) => image.id === imageId);
+      if (index === -1) {
+        return images;
+      }
+
+      const [target] = mutable.splice(index, 1);
+
+      switch (direction) {
+        case 'front':
+          mutable.push(target);
+          break;
+        case 'back':
+          mutable.unshift(target);
+          break;
+        case 'forward': {
+          const nextIndex = Math.min(index + 1, mutable.length);
+          mutable.splice(nextIndex, 0, target);
+          break;
+        }
+        case 'backward': {
+          const prevIndex = Math.max(index - 1, 0);
+          mutable.splice(prevIndex, 0, target);
+          break;
+        }
+        default:
+          mutable.splice(index, 0, target);
+      }
+
+      return normalizeZIndex(mutable);
+    },
+    [normalizeZIndex]
+  );
+
+  const handleAddImages = useCallback(
+    async (fileList: FileList | null) => {
+      if (!fileList || fileList.length === 0) return;
+
+      const currentImages = getImagesForLabel(activeLabelIndex);
+      const availableSlots = MAX_IMAGES_PER_LABEL - currentImages.length;
+
+      if (availableSlots <= 0) {
+        setImageLimitMessage(`You can add up to ${MAX_IMAGES_PER_LABEL} images per label.`);
+        return;
+      }
+
+      const files = Array.from(fileList).slice(0, availableSlots);
+      const createdImages: LabelImage[] = [];
+
+      for (const file of files) {
+        try {
+          const src = await readFileAsDataURL(file);
+          const { width: naturalWidth, height: naturalHeight } = await loadImageDimensions(src);
+          const aspectRatio = naturalWidth > 0 ? naturalHeight / naturalWidth : 1;
+
+          let width = 0.4; // default to 40% of label width
+          let height = width * aspectRatio;
+
+          // Keep height within bounds
+          if (height > 0.5) {
+            const scale = 0.5 / height;
+            height = 0.5;
+            width *= scale;
+          }
+
+          // Ensure width also within bounds
+          if (width > 0.8) {
+            const scale = 0.8 / width;
+            width = 0.8;
+            height *= scale;
+          }
+
+          const centeredX = Math.max(0, Math.min(1 - width, 0.5 - width / 2));
+          const centeredY = Math.max(0, Math.min(1 - height, 0.5 - height / 2));
+
+          createdImages.push({
+            id: generateImageId(),
+            src,
+            x: centeredX,
+            y: centeredY,
+            width,
+            height,
+            rotation: 0,
+            zIndex: 9999, // temporary, will normalize
+          });
+        } catch (error) {
+          console.error('Failed to import image:', error);
+        }
+      }
+
+      if (createdImages.length === 0) return;
+
+      if (applyImagesToAll) {
+        updateGlobalImages((prev) => [...prev, ...createdImages]);
+      } else {
+        setImagesForLabel(activeLabelIndex, (prev) => [...prev, ...createdImages]);
+      }
+
+      setActiveImageId(createdImages[createdImages.length - 1].id);
+
+      if (fileList.length > files.length) {
+        setImageLimitMessage(
+          `Only the first ${files.length} image${files.length === 1 ? '' : 's'} were added (max ${MAX_IMAGES_PER_LABEL} per label).`
+        );
+      } else {
+        setImageLimitMessage(null);
+      }
+    },
+    [
+      activeLabelIndex,
+      applyImagesToAll,
+      generateImageId,
+      getImagesForLabel,
+      loadImageDimensions,
+      readFileAsDataURL,
+      setImagesForLabel,
+      updateGlobalImages,
+    ]
+  );
+
+  const handleImageChange = useCallback(
+    (labelIndex: number, imageId: string, updates: LabelImageUpdate) => {
+      const applyUpdates = (images: LabelImage[]) =>
+        images.map((image) => {
+          if (image.id !== imageId) return image;
+
+          const updated: LabelImage = {
+            ...image,
+            ...updates,
+          };
+
+          return {
+            ...updated,
+            x: clamp(updated.x ?? image.x),
+            y: clamp(updated.y ?? image.y),
+            width: clamp(updated.width ?? image.width, 0.05, 1),
+            height: clamp(updated.height ?? image.height, 0.05, 1),
+            rotation: Math.max(-180, Math.min(180, updated.rotation ?? image.rotation)),
+          };
+        });
+
+      if (applyImagesToAll) {
+        updateGlobalImages(applyUpdates);
+      } else {
+        setImagesForLabel(labelIndex, applyUpdates);
+      }
+    },
+    [applyImagesToAll, clamp, setImagesForLabel, updateGlobalImages]
+  );
+
+  const handleImageSelect = useCallback((labelIndex: number, imageId: string) => {
+    setActiveLabelIndex(labelIndex);
+    setActiveImageId(imageId);
+  }, []);
+
+  const handleImageDrop = useCallback(
+    (labelIndex: number, imageId: string, position: { x: number; y: number }) => {
+      setActiveLabelIndex(labelIndex);
+      setActiveImageId(imageId);
+
+      const applyUpdates = (images: LabelImage[]) =>
+        images.map((image) => {
+          if (image.id !== imageId) return image;
+          const maxX = Math.max(0, 1 - image.width);
+          const maxY = Math.max(0, 1 - image.height);
+          return {
+            ...image,
+            x: clamp(position.x, 0, maxX),
+            y: clamp(position.y, 0, maxY),
+          };
+        });
+
+      if (applyImagesToAll) {
+        updateGlobalImages(applyUpdates);
+      } else {
+        setImagesForLabel(labelIndex, applyUpdates);
+      }
+    },
+    [applyImagesToAll, clamp, setImagesForLabel, updateGlobalImages]
+  );
+
+  const handleLabelClick = useCallback((labelIndex: number) => {
+    setActiveLabelIndex(labelIndex);
+  }, []);
+
+  const handleRemoveImage = useCallback(
+    (imageId: string) => {
+      if (applyImagesToAll) {
+        updateGlobalImages((prev) => prev.filter((image) => image.id !== imageId));
+      } else {
+        setImagesForLabel(activeLabelIndex, (prev) => prev.filter((image) => image.id !== imageId));
+      }
+      setImageLimitMessage(null);
+    },
+    [activeLabelIndex, applyImagesToAll, setImagesForLabel, updateGlobalImages]
+  );
+
+  const handleReorderImage = useCallback(
+    (imageId: string, direction: 'forward' | 'backward' | 'front' | 'back') => {
+      if (applyImagesToAll) {
+        updateGlobalImages((prev) => reorderImagesArray(prev, imageId, direction));
+      } else {
+        setImagesForLabel(activeLabelIndex, (prev) => reorderImagesArray(prev, imageId, direction));
+      }
+    },
+    [activeLabelIndex, applyImagesToAll, reorderImagesArray, setImagesForLabel, updateGlobalImages]
+  );
+
+  const handleDuplicateImage = useCallback(() => {
+    if (!activeImageId) return;
+    const images = getImagesForLabel(activeLabelIndex);
+    if (images.length >= MAX_IMAGES_PER_LABEL) {
+      setImageLimitMessage(`You can add up to ${MAX_IMAGES_PER_LABEL} images per label.`);
+      return;
+    }
+    const target = images.find((image) => image.id === activeImageId);
+    if (!target) return;
+
+    const duplicate: LabelImage = {
+      ...target,
+      id: generateImageId(),
+      x: clamp(target.x + 0.05, 0, 1 - target.width),
+      y: clamp(target.y + 0.05, 0, 1 - target.height),
+      zIndex: target.zIndex + 1,
+    };
+
+    if (applyImagesToAll) {
+      updateGlobalImages((prev) => [...prev, duplicate]);
+    } else {
+      setImagesForLabel(activeLabelIndex, (prev) => [...prev, duplicate]);
+    }
+    setActiveImageId(duplicate.id);
+    setImageLimitMessage(null);
+  }, [
+    activeImageId,
+    activeLabelIndex,
+    applyImagesToAll,
+    clamp,
+    generateImageId,
+    getImagesForLabel,
+    setImagesForLabel,
+    updateGlobalImages,
+  ]);
+
+  const handleResetImagePosition = useCallback(() => {
+    if (!activeImageId) return;
+    const images = getImagesForLabel(activeLabelIndex);
+    const target = images.find((image) => image.id === activeImageId);
+    if (!target) return;
+
+    const centeredX = clamp(0.5 - target.width / 2, 0, 1 - target.width);
+    const centeredY = clamp(0.5 - target.height / 2, 0, 1 - target.height);
+
+    handleImageChange(activeLabelIndex, activeImageId, {
+      x: centeredX,
+      y: centeredY,
+      rotation: 0,
+    });
+  }, [activeImageId, activeLabelIndex, clamp, getImagesForLabel, handleImageChange]);
+
+  const activeImages = useMemo(() => {
+    return applyImagesToAll ? globalLabelImages : labelImageMap[activeLabelIndex] ?? [];
+  }, [activeLabelIndex, applyImagesToAll, globalLabelImages, labelImageMap]);
+
+  const selectedImage = useMemo(() => {
+    if (!activeImageId) return null;
+    return activeImages.find((image) => image.id === activeImageId) ?? null;
+  }, [activeImageId, activeImages]);
+
+  const handlePositionInputChange = useCallback(
+    (field: 'x' | 'y', value: number) => {
+      if (!activeImageId) return;
+      const decimal = clamp(value / 100, 0, 1);
+      handleImageChange(activeLabelIndex, activeImageId, { [field]: decimal });
+    },
+    [activeImageId, activeLabelIndex, clamp, handleImageChange]
+  );
+
+  const handleWidthSliderChange = useCallback(
+    (value: number) => {
+      if (!activeImageId || !selectedImage) return;
+      const widthDecimal = clamp(value / 100, 0.05, 1);
+      const aspectRatio = selectedImage.width > 0 ? selectedImage.height / selectedImage.width : 1;
+      const heightDecimal = clamp(widthDecimal * aspectRatio, 0.05, 1);
+
+      handleImageChange(activeLabelIndex, activeImageId, {
+        width: widthDecimal,
+        height: heightDecimal,
+      });
+    },
+    [activeImageId, activeLabelIndex, clamp, handleImageChange, selectedImage]
+  );
+
+  const handleRotationInputChange = useCallback(
+    (value: number) => {
+      if (!activeImageId) return;
+      handleImageChange(activeLabelIndex, activeImageId, { rotation: Math.max(-180, Math.min(180, value)) });
+    },
+    [activeImageId, activeLabelIndex, handleImageChange]
   );
   
   // Custom template configuration state (defaults match Tower W225 example)
@@ -79,6 +456,34 @@ export default function ProductList({ products, initialTemplateId }: ProductList
     const saved = loadSavedCustomTemplates();
     setSavedCustomTemplates(saved);
   }, []);
+
+  useEffect(() => {
+    if (!applyImagesToAll) {
+      setLabelImageMap((prev) => {
+        if (prev[activeLabelIndex]) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [activeLabelIndex]: [],
+        };
+      });
+    }
+  }, [activeLabelIndex, applyImagesToAll]);
+
+  useEffect(() => {
+    const images = applyImagesToAll ? globalLabelImages : labelImageMap[activeLabelIndex] ?? [];
+    if (images.length === 0) {
+      if (activeImageId !== null) {
+        setActiveImageId(null);
+      }
+      return;
+    }
+
+    if (!images.some((image) => image.id === activeImageId)) {
+      setActiveImageId(images[images.length - 1].id);
+    }
+  }, [activeImageId, activeLabelIndex, applyImagesToAll, globalLabelImages, labelImageMap]);
 
   // Get all available templates (including saved custom ones)
   const allTemplates = [...AVAILABLE_TEMPLATES, ...savedCustomTemplates];
@@ -427,6 +832,19 @@ export default function ProductList({ products, initialTemplateId }: ProductList
       }
     }
   }
+
+  useEffect(() => {
+    if (totalLabelsToGenerate <= 0) {
+      if (activeLabelIndex !== 0) {
+        setActiveLabelIndex(0);
+      }
+      return;
+    }
+
+    if (activeLabelIndex > totalLabelsToGenerate - 1) {
+      setActiveLabelIndex(totalLabelsToGenerate - 1);
+    }
+  }, [activeLabelIndex, totalLabelsToGenerate]);
 
   const handleSelectAll = () => {
     if (selectedProducts.size === products.length) {
@@ -981,6 +1399,231 @@ export default function ProductList({ products, initialTemplateId }: ProductList
         </div>
       </div>
 
+      {selectedProducts.size > 0 && (
+        <div className="mb-6 bg-white rounded-lg shadow-md p-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">Media Overlays</h3>
+              <p className="text-sm text-gray-500">
+                Upload images and position them directly on your labels. Drag edges to resize, use the rotation control, and manage
+                layer order as needed.
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={applyImagesToAll}
+                onChange={(event) => {
+                  setApplyImagesToAll(event.target.checked);
+                }}
+              />
+              Apply images to all labels
+            </label>
+          </div>
+
+          {!applyImagesToAll && (
+            <div className="mt-2 text-xs text-gray-500">
+              Editing label <span className="font-semibold text-gray-700">#{activeLabelIndex + 1}</span>. Click any label in the preview
+              grid to select it.
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-6 md:grid-cols-[minmax(220px,280px)_1fr]">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Import images</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(event) => {
+                  handleAddImages(event.target.files);
+                  if (event.target.value) {
+                    event.target.value = '';
+                  }
+                }}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  cursor-pointer"
+              />
+              <div className="mt-2 text-xs text-gray-500">
+                Maximum {MAX_IMAGES_PER_LABEL} images per label.
+              </div>
+              <div className="mt-3 text-xs text-gray-500 space-y-1">
+                <p>Supported formats: PNG, JPG, GIF.</p>
+                <p>
+                  Active context:{' '}
+                  <span className="font-semibold text-gray-700">
+                    {applyImagesToAll ? 'All labels' : `Label #${activeLabelIndex + 1}`}
+                  </span>
+                </p>
+                <p>Images are kept in memory for this session.</p>
+              </div>
+              {imageLimitMessage && (
+                <div className="mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                  {imageLimitMessage}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  Images on {applyImagesToAll ? 'every label' : `label #${activeLabelIndex + 1}`}
+                </h4>
+                {activeImages.length === 0 ? (
+                  <div className="text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    Upload an image, then drag it inside the preview. Use the controls below to fine-tune position and size.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-3">
+                    {activeImages.map((image) => {
+                      const isSelected = image.id === activeImageId;
+                      return (
+                        <button
+                          key={image.id}
+                          type="button"
+                          draggable
+                          onClick={() => handleImageSelect(activeLabelIndex, image.id)}
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData('application/json', JSON.stringify({ imageId: image.id }));
+                            event.dataTransfer.effectAllowed = 'move';
+                            setDraggingImageId(image.id);
+                            handleImageSelect(activeLabelIndex, image.id);
+                          }}
+                          onDragEnd={() => setDraggingImageId(null)}
+                          className={`relative border-2 rounded-md overflow-hidden h-16 w-16 flex items-center justify-center bg-gray-50 transition-colors ${
+                            isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-400'
+                          }`}
+                        >
+                          <img src={image.src} alt="Label overlay preview" className="max-h-full max-w-full object-contain" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {selectedImage && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Horizontal position ({Math.round(selectedImage.x * 100)}%)
+                    </label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={Math.round(selectedImage.x * 100)}
+                      onChange={(event) => handlePositionInputChange('x', Number(event.target.value))}
+                      className="w-full accent-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Vertical position ({Math.round(selectedImage.y * 100)}%)
+                    </label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={Math.round(selectedImage.y * 100)}
+                      onChange={(event) => handlePositionInputChange('y', Number(event.target.value))}
+                      className="w-full accent-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Width ({Math.round(selectedImage.width * 100)}%)
+                    </label>
+                    <input
+                      type="range"
+                      min={10}
+                      max={100}
+                      step={1}
+                      value={Math.round(selectedImage.width * 100)}
+                      onChange={(event) => handleWidthSliderChange(Number(event.target.value))}
+                      className="w-full accent-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Rotation ({Math.round(selectedImage.rotation)}°)
+                    </label>
+                    <input
+                      type="range"
+                      min={-180}
+                      max={180}
+                      step={1}
+                      value={Math.round(selectedImage.rotation)}
+                      onChange={(event) => handleRotationInputChange(Number(event.target.value))}
+                      className="w-full accent-blue-600"
+                    />
+                  </div>
+                  <div className="md:col-span-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDuplicateImage}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      Duplicate
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetImagePosition}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      Center & Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReorderImage(selectedImage.id, 'front')}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      Bring to Front
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReorderImage(selectedImage.id, 'forward')}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      Move Forward
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReorderImage(selectedImage.id, 'backward')}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      Move Backward
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReorderImage(selectedImage.id, 'back')}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      Send to Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(selectedImage.id)}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-red-500 border border-red-500 rounded-md hover:bg-red-600 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Print Button */}
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
@@ -1163,6 +1806,16 @@ export default function ProductList({ products, initialTemplateId }: ProductList
                   template={selectedTemplate}
                   labelsPerPage={effectiveLabelsPerPage}
                   maxPages={maxPages}
+                  applyImagesToAll={applyImagesToAll}
+                  globalImages={globalLabelImages}
+                  labelImages={labelImageMap}
+                  onLabelClick={handleLabelClick}
+                  activeLabelIndex={activeLabelIndex}
+                  onImageChange={handleImageChange}
+                  onImageSelect={handleImageSelect}
+                  activeImageId={activeImageId}
+                  draggingImageId={draggingImageId}
+                  onImageDrop={handleImageDrop}
                 />
               </div>
             </>

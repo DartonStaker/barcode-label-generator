@@ -65,3 +65,200 @@ select option:hover {
 /* Borders are visible in both preview and print for grid guidelines */
 /* Borders are added via inline styles in components and className in LabelTemplate */
 
+.label-template .label-dimension-guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  color: rgba(37, 99, 235, 0.4);
+  box-sizing: border-box;
+}
+
+.label-template .label-dimension-width,
+.label-template .label-dimension-height {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.label-template .label-dimension-width-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed currentColor;
+}
+
+.label-template .label-dimension-width-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-bottom: 1px dashed currentColor;
+}
+
+.label-template .label-dimension-width-top::before,
+.label-template .label-dimension-width-top::after,
+.label-template .label-dimension-width-bottom::before,
+.label-template .label-dimension-width-bottom::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 10px;
+  background-color: currentColor;
+}
+
+.label-template .label-dimension-width-top::before,
+.label-template .label-dimension-width-bottom::before {
+  left: 0;
+}
+
+.label-template .label-dimension-width-top::after,
+.label-template .label-dimension-width-bottom::after {
+  right: 0;
+}
+
+.label-template .label-dimension-width-top::before,
+.label-template .label-dimension-width-top::after {
+  top: 0;
+}
+
+.label-template .label-dimension-width-bottom::before,
+.label-template .label-dimension-width-bottom::after {
+  bottom: 0;
+}
+
+.label-template .label-dimension-height-left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-left: 1px dashed currentColor;
+}
+
+.label-template .label-dimension-height-right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  border-right: 1px dashed currentColor;
+}
+
+.label-template .label-dimension-height-left::before,
+.label-template .label-dimension-height-left::after,
+.label-template .label-dimension-height-right::before,
+.label-template .label-dimension-height-right::after {
+  content: '';
+  position: absolute;
+  height: 1px;
+  width: 10px;
+  background-color: currentColor;
+}
+
+.label-template .label-dimension-height-left::before,
+.label-template .label-dimension-height-right::before {
+  top: 0;
+}
+
+.label-template .label-dimension-height-left::after,
+.label-template .label-dimension-height-right::after {
+  bottom: 0;
+}
+
+.label-template .label-dimension-height-left::before,
+.label-template .label-dimension-height-left::after {
+  left: 0;
+}
+
+.label-template .label-dimension-height-right::before,
+.label-template .label-dimension-height-right::after {
+  right: 0;
+}
+
+@media print {
+  .label-template .label-dimension-guides {
+    display: none !important;
+  }
+}
+
+.label-template[data-active='true'] {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+.label-image-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.label-image-layer.interactive {
+  pointer-events: auto;
+}
+
+.label-image-overlay {
+  width: 100%;
+  height: 100%;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  background-color: transparent;
+  pointer-events: auto;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  position: relative;
+}
+
+.label-image-overlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.label-image-overlay.is-selected {
+  border-color: rgba(59, 130, 246, 0.65);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
+}
+
+.label-image-overlay .label-image-handle {
+  display: none;
+}
+
+.label-image-overlay.is-selected .label-image-handle {
+  display: block;
+}
+
+.label-image-handle {
+  width: 10px;
+  height: 10px;
+  background-color: #2563eb;
+  border-radius: 9999px;
+  position: absolute;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.label-image-handle.resize {
+  cursor: nwse-resize;
+}
+
+.label-image-handle.rotate {
+  cursor: grab;
+}
+
+.label-image-handle.rotate:active {
+  cursor: grabbing;
+}
+
+@media print {
+  .label-template[data-active='true'] {
+    box-shadow: none !important;
+  }
+  .label-image-overlay,
+  .label-image-overlay.is-selected {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .label-cell {
+    box-shadow: none !important;
+  }
+}
+

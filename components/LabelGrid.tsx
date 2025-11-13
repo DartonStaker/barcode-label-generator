@@ -3,15 +3,41 @@
 import { Product } from '@/lib/excelParser';
 import LabelTemplate from './LabelTemplate';
 import { LabelTemplate as LabelTemplateConfig, calculateLabelPositions, getLabelPosition } from '@/lib/labelTemplates';
+import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
 
 interface LabelGridProps {
   products: Product[];
   template: LabelTemplateConfig;
   labelsPerPage?: number;
   maxPages?: number;
+  applyImagesToAll?: boolean;
+  globalImages?: LabelImage[];
+  labelImages?: Record<number, LabelImage[]>;
+  onLabelClick?: (labelIndex: number) => void;
+  activeLabelIndex?: number;
+  onImageChange?: (labelIndex: number, imageId: string, updates: LabelImageUpdate) => void;
+  onImageSelect?: (labelIndex: number, imageId: string) => void;
+  activeImageId?: string | null;
+  draggingImageId?: string | null;
+  onImageDrop?: (labelIndex: number, imageId: string, position: { x: number; y: number }) => void;
 }
 
-export default function LabelGrid({ products, template, labelsPerPage, maxPages }: LabelGridProps) {
+export default function LabelGrid({
+  products,
+  template,
+  labelsPerPage,
+  maxPages,
+  applyImagesToAll = true,
+  globalImages = [],
+  labelImages = {},
+  onLabelClick,
+  activeLabelIndex,
+  onImageChange,
+  onImageSelect,
+  activeImageId,
+  draggingImageId,
+  onImageDrop,
+}: LabelGridProps) {
   // Maximum slots available on a single physical sheet
   const maxLabelsPerPage = template.columns * template.rows;
 
@@ -278,7 +304,26 @@ export default function LabelGrid({ products, template, labelsPerPage, maxPages 
             // This ensures React correctly identifies each position and keeps components in place
             // When label count changes, React will update props but keep components in correct positions
             const uniqueKey = `p${pageIndex}-r${pos.row}-c${pos.col}`;
-            
+            const absoluteIndex = pageIndex * maxLabelsPerPage + idx;
+            const isActiveLabel = activeLabelIndex === absoluteIndex;
+            const overlayImages = applyImagesToAll ? globalImages : (labelImages[absoluteIndex] ?? []);
+            const allowImageInteraction = applyImagesToAll || isActiveLabel;
+
+            if (product && pageIndex === 0 && idx < 3) {
+              console.log(`🔍 Product data for position ${idx}:`, {
+                hasProduct: !!product,
+                productKeys: Object.keys(product),
+                code: product.code || product.Code || 'NO CODE',
+                description: product.description || product.Description || 'NO DESC',
+                price: product.price || product.Price || 'NO PRICE',
+                fullProduct: product
+              });
+            }
+
+            const productId = product
+              ? product.code || product.Code || product['Barcode Numbers'] || `prod-${idx}`
+              : `empty-${idx}`;
+
             return (
               <div
                 key={uniqueKey}
@@ -286,9 +331,8 @@ export default function LabelGrid({ products, template, labelsPerPage, maxPages 
                 data-row={pos.row}
                 data-col={pos.col}
                 data-index={idx}
+                onMouseDown={() => onLabelClick?.(absoluteIndex)}
                 style={{
-                  // Inline styles as fallback - CSS classes with !important will override
-                  // This ensures labels are positioned even if CSS hasn't loaded yet
                   position: 'absolute',
                   left: `${leftPx}px`,
                   top: `${topPx}px`,
@@ -299,41 +343,30 @@ export default function LabelGrid({ products, template, labelsPerPage, maxPages 
                   margin: 0,
                   padding: 0,
                   border: 'none',
-                  // CRITICAL: Ensure visibility
                   visibility: 'visible',
                   opacity: 1,
                   display: 'block',
-                  zIndex: 1,
+                  zIndex: isActiveLabel ? 5 : 1,
+                  boxShadow: isActiveLabel ? '0 0 0 2px rgba(59, 130, 246, 0.35)' : 'none',
+                  borderRadius: '2px',
+                  transition: 'box-shadow 150ms ease',
                 } as React.CSSProperties}
               >
-                {product ? (
-                  (() => {
-                    // Debug: Log product data for first few positions
-                    if (pageIndex === 0 && idx < 3) {
-                      console.log(`🔍 Product data for position ${idx}:`, {
-                        hasProduct: !!product,
-                        productKeys: Object.keys(product),
-                        code: product.code || product.Code || 'NO CODE',
-                        description: product.description || product.Description || 'NO DESC',
-                        price: product.price || product.Price || 'NO PRICE',
-                        fullProduct: product
-                      });
-                    }
-                    // Include product identifier in key to ensure React updates when product changes
-                    // This prevents React from reusing components with stale product data
-                    const productId = product ? (product.code || product.Code || product['Barcode Numbers'] || `prod-${idx}`) : `empty-${idx}`;
-                    return (
-                      <LabelTemplate 
-                        key={`label-template-${uniqueKey}-${productId}`}
-                        product={product} 
-                        index={pageIndex * maxLabelsPerPage + idx}
-                        template={template}
-                      />
-                    );
-                  })()
-                ) : (
-                  <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }} />
-                )}
+                <LabelTemplate
+                  key={`label-template-${uniqueKey}-${productId}`}
+                  product={product}
+                  index={absoluteIndex}
+                  template={template}
+                  imageOverlays={overlayImages}
+                  onSelectLabel={onLabelClick}
+                  isActive={!!isActiveLabel}
+                  onImageChange={onImageChange}
+                  onImageSelect={onImageSelect}
+                  activeImageId={activeImageId}
+                  allowImageInteraction={allowImageInteraction}
+                  draggingImageId={draggingImageId}
+                  onImageDrop={onImageDrop}
+                />
               </div>
             );
             });
