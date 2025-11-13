@@ -6,7 +6,7 @@ import Barcode from './Barcode';
 import { Product } from '@/lib/excelParser';
 import { LabelTemplate as LabelTemplateConfig } from '@/lib/labelTemplates';
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
-import { FieldLayout, LabelFieldKey, FieldPlacement } from '@/lib/fieldLayout';
+import { FieldLayout, LabelFieldKey, FieldPlacement, DEFAULT_FIELD_LAYOUT } from '@/lib/fieldLayout';
 import { Rnd } from 'react-rnd';
 
 interface LabelTemplateProps {
@@ -14,7 +14,7 @@ interface LabelTemplateProps {
   index?: number;
   template?: LabelTemplateConfig;
   barcodeFormat?: 'CODE128' | 'EAN13';
-  fieldLayout: FieldLayout;
+  fieldLayout?: FieldLayout;
   isFieldEditing?: boolean;
   onFieldLayoutChange?: (field: LabelFieldKey, placement: FieldPlacement) => void;
   imageOverlays?: LabelImage[];
@@ -52,6 +52,7 @@ export default function LabelTemplate({
   const containerWidth = containerSize.width;
   const containerHeight = containerSize.height;
   const format: 'CODE128' | 'EAN13' = barcodeFormat ?? 'CODE128';
+  const effectiveFieldLayout = fieldLayout ?? DEFAULT_FIELD_LAYOUT;
 
   const clampValue = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
 
@@ -506,136 +507,127 @@ export default function LabelTemplate({
       : rawCode
     : '';
 
-  const emitFieldLayoutChange = useCallback(
-    (field: LabelFieldKey, placement: FieldPlacement) => {
-      onFieldLayoutChange?.(field, placement);
-    },
-    [onFieldLayoutChange]
-  );
+  const emitFieldLayoutChange = (field: LabelFieldKey, placement: FieldPlacement) => {
+    onFieldLayoutChange?.(field, placement);
+  };
 
-  const handleFieldTransform = useCallback(
-    (field: LabelFieldKey, xPx: number, yPx: number, widthPx: number, heightPx: number) => {
-      if (!onFieldLayoutChange || containerWidth === 0 || containerHeight === 0) return;
+  const handleFieldTransform = (field: LabelFieldKey, xPx: number, yPx: number, widthPx: number, heightPx: number) => {
+    if (!onFieldLayoutChange || containerWidth === 0 || containerHeight === 0) return;
 
-      let widthFraction = clampValue(widthPx / containerWidth, 0.05, 1);
-      let heightFraction = clampValue(heightPx / containerHeight, 0.05, 1);
-      let xFraction = clampValue(xPx / containerWidth, 0, 1);
-      let yFraction = clampValue(yPx / containerHeight, 0, 1);
+    let widthFraction = clampValue(widthPx / containerWidth, 0.05, 1);
+    let heightFraction = clampValue(heightPx / containerHeight, 0.05, 1);
+    let xFraction = clampValue(xPx / containerWidth, 0, 1);
+    let yFraction = clampValue(yPx / containerHeight, 0, 1);
 
-      if (xFraction + widthFraction > 1) {
-        xFraction = 1 - widthFraction;
-      }
-      if (yFraction + heightFraction > 1) {
-        yFraction = 1 - heightFraction;
-      }
+    if (xFraction + widthFraction > 1) {
+      xFraction = 1 - widthFraction;
+    }
+    if (yFraction + heightFraction > 1) {
+      yFraction = 1 - heightFraction;
+    }
 
-      emitFieldLayoutChange(field, {
-        x: xFraction,
-        y: yFraction,
-        width: widthFraction,
-        height: heightFraction,
-      });
-    },
-    [clampValue, containerHeight, containerWidth, emitFieldLayoutChange, onFieldLayoutChange]
-  );
+    emitFieldLayoutChange(field, {
+      x: xFraction,
+      y: yFraction,
+      width: widthFraction,
+      height: heightFraction,
+    });
+  };
 
-  const renderField = useCallback(
-    (
-      field: LabelFieldKey,
-      content: ReactNode,
-      {
-        justify = 'flex-start',
-        align = 'center',
-        className,
-      }: { justify?: 'flex-start' | 'center' | 'flex-end'; align?: 'flex-start' | 'center' | 'flex-end'; className?: string } = {}
-    ) => {
-      const placement = fieldLayout[field];
-      if (!placement) return null;
+  const renderField = (
+    field: LabelFieldKey,
+    content: ReactNode,
+    {
+      justify = 'flex-start',
+      align = 'center',
+      className,
+    }: { justify?: 'flex-start' | 'center' | 'flex-end'; align?: 'flex-start' | 'center' | 'flex-end'; className?: string } = {}
+  ) => {
+    const placement = effectiveFieldLayout[field];
+    if (!placement) return null;
 
-      const left = placement.x * 100;
-      const top = placement.y * 100;
-      const widthPercent = placement.width * 100;
-      const heightPercent = placement.height * 100;
+    const left = placement.x * 100;
+    const top = placement.y * 100;
+    const widthPercent = placement.width * 100;
+    const heightPercent = placement.height * 100;
 
-      if (isFieldEditing && containerWidth > 0 && containerHeight > 0 && onFieldLayoutChange) {
-        const widthPx = placement.width * containerWidth;
-        const heightPx = placement.height * containerHeight;
-        const xPx = placement.x * containerWidth;
-        const yPx = placement.y * containerHeight;
-
-        return (
-          <Rnd
-            key={`field-${field}`}
-            bounds="parent"
-            size={{ width: widthPx, height: heightPx }}
-            position={{ x: xPx, y: yPx }}
-            onDragStart={() => onSelectLabel?.(labelIndex)}
-            onDragStop={(_, data) => {
-              const latestPlacement = fieldLayout[field] ?? placement;
-              const latestWidth = latestPlacement.width * containerWidth;
-              const latestHeight = latestPlacement.height * containerHeight;
-              handleFieldTransform(field, data.x, data.y, latestWidth, latestHeight);
-            }}
-            onResizeStop={(_, __, ref, ___, position) => {
-              handleFieldTransform(field, position.x, position.y, ref.offsetWidth, ref.offsetHeight);
-            }}
-            enableResizing={{
-              top: true,
-              right: true,
-              bottom: true,
-              left: true,
-              topRight: true,
-              bottomRight: true,
-              bottomLeft: true,
-              topLeft: true,
-            }}
-          >
-            <div
-              className={className}
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: align,
-                justifyContent: justify,
-                padding: '4px',
-                boxSizing: 'border-box',
-                backgroundColor: 'rgba(255,255,255,0.85)',
-                border: '1px dashed rgba(59, 130, 246, 0.6)',
-                borderRadius: '4px',
-                cursor: 'move',
-              }}
-              onMouseDown={() => onSelectLabel?.(labelIndex)}
-            >
-              {content}
-            </div>
-          </Rnd>
-        );
-      }
+    if (isFieldEditing && containerWidth > 0 && containerHeight > 0 && onFieldLayoutChange) {
+      const widthPx = placement.width * containerWidth;
+      const heightPx = placement.height * containerHeight;
+      const xPx = placement.x * containerWidth;
+      const yPx = placement.y * containerHeight;
 
       return (
-        <div
+        <Rnd
           key={`field-${field}`}
-          className={className}
-          style={{
-            position: 'absolute',
-            left: `${left}%`,
-            top: `${top}%`,
-            width: `${widthPercent}%`,
-            height: `${heightPercent}%`,
-            display: 'flex',
-            alignItems: align,
-            justifyContent: justify,
-            padding: '2px',
-            boxSizing: 'border-box',
+          bounds="parent"
+          size={{ width: widthPx, height: heightPx }}
+          position={{ x: xPx, y: yPx }}
+          onDragStart={() => onSelectLabel?.(labelIndex)}
+          onDragStop={(_, data) => {
+            const latestPlacement = effectiveFieldLayout[field] ?? placement;
+            const latestWidth = latestPlacement.width * containerWidth;
+            const latestHeight = latestPlacement.height * containerHeight;
+            handleFieldTransform(field, data.x, data.y, latestWidth, latestHeight);
+          }}
+          onResizeStop={(_, __, ref, ___, position) => {
+            handleFieldTransform(field, position.x, position.y, ref.offsetWidth, ref.offsetHeight);
+          }}
+          enableResizing={{
+            top: true,
+            right: true,
+            bottom: true,
+            left: true,
+            topRight: true,
+            bottomRight: true,
+            bottomLeft: true,
+            topLeft: true,
           }}
         >
-          {content}
-        </div>
+          <div
+            className={className}
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: align,
+              justifyContent: justify,
+              padding: '4px',
+              boxSizing: 'border-box',
+              backgroundColor: 'rgba(255,255,255,0.85)',
+              border: '1px dashed rgba(59, 130, 246, 0.6)',
+              borderRadius: '4px',
+              cursor: 'move',
+            }}
+            onMouseDown={() => onSelectLabel?.(labelIndex)}
+          >
+            {content}
+          </div>
+        </Rnd>
       );
-    },
-    [containerHeight, containerWidth, fieldLayout, handleFieldTransform, isFieldEditing, labelIndex, onFieldLayoutChange, onSelectLabel]
-  );
+    }
+
+    return (
+      <div
+        key={`field-${field}`}
+        className={className}
+        style={{
+          position: 'absolute',
+          left: `${left}%`,
+          top: `${top}%`,
+          width: `${widthPercent}%`,
+          height: `${heightPercent}%`,
+          display: 'flex',
+          alignItems: align,
+          justifyContent: justify,
+          padding: '2px',
+          boxSizing: 'border-box',
+        }}
+      >
+        {content}
+      </div>
+    );
+  };
   
   return (
     <div
