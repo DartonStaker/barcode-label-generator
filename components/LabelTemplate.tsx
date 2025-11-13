@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import Image from 'next/image';
 import Barcode from './Barcode';
 import { Product } from '@/lib/excelParser';
 import { LabelTemplate as LabelTemplateConfig } from '@/lib/labelTemplates';
@@ -550,7 +551,15 @@ export default function LabelTemplate({
                   cursor: allowInteraction ? 'move' : 'pointer',
                 }}
               >
-                <img src={overlay.src} alt="" draggable={false} />
+                <Image
+                  src={overlay.src}
+                  alt=""
+                  fill
+                  unoptimized
+                  draggable={false}
+                  sizes="100vw"
+                  style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                />
 
                 {allowInteraction && isSelectedOverlay && (
                   <>

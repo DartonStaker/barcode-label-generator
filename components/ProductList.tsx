@@ -6,6 +6,7 @@ import LabelGrid from './LabelGrid';
 import { AVAILABLE_TEMPLATES, LabelTemplate as LabelTemplateConfig, getTemplateById, getLabelPosition, calculateLabelPositions } from '@/lib/labelTemplates';
 import { useReactToPrint } from 'react-to-print';
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
+import Image from 'next/image';
 
 interface ProductListProps {
   products: Product[];
@@ -752,10 +753,8 @@ export default function ProductList({ products, initialTemplateId }: ProductList
     `,
   });
 
-  if (products.length === 0) {
-    return null;
-  }
-  
+  const noProducts = products.length === 0;
+
   // If no products selected or labelsPerPage is 0, don't generate any labels
   // Note: We still continue to calculate values for display, but productsToShow will be empty
   
@@ -845,6 +844,10 @@ export default function ProductList({ products, initialTemplateId }: ProductList
       setActiveLabelIndex(totalLabelsToGenerate - 1);
     }
   }, [activeLabelIndex, totalLabelsToGenerate]);
+
+  if (noProducts) {
+    return null;
+  }
 
   const handleSelectAll = () => {
     if (selectedProducts.size === products.length) {
@@ -1500,7 +1503,14 @@ export default function ProductList({ products, initialTemplateId }: ProductList
                             isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-400'
                           }`}
                         >
-                          <img src={image.src} alt="Label overlay preview" className="max-h-full max-w-full object-contain" />
+                          <Image
+                            src={image.src}
+                            alt="Label overlay preview"
+                            width={64}
+                            height={64}
+                            unoptimized
+                            className="max-h-full max-w-full object-contain"
+                          />
                         </button>
                       );
                     })}
