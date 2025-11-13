@@ -49,6 +49,28 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     verticalPitch: 0.8340277778, // Matches table row height (1201 twips)
   },
   {
+    id: '2-4-6-10-18-32-45',
+    name: '2,4,6,10,18,32,45 Label Template',
+    description: '9 rows x 5 columns (45 labels per page) - Flexible template supporting various label counts',
+    // A4 page size for consistent printing
+    pageWidth: 8.26771653543307, // A4 width: 21 cm = exactly 8.26771653543307 inches
+    pageHeight: 11.69291338582677, // A4 height: 29.7 cm = exactly 11.69291338582677 inches
+    // Label dimensions - similar to 65 UP template but adjusted for 9 rows
+    labelWidth: 1.5034722222, // ~38.19 mm
+    labelHeight: 0.8340277778, // ~21.18 mm
+    columns: 5,
+    rows: 9,
+    // Margins - similar to 65 UP template
+    marginTop: 0.52,
+    marginBottom: 0.37,
+    marginLeft: 0.45,
+    marginRight: 0.27,
+    gapHorizontal: 0, // Horizontal pitch = label width, so no gap between labels
+    gapVertical: 0, // Vertical pitch = label height, so no gap between labels
+    horizontalPitch: 1.5034722222, // Matches label width
+    verticalPitch: 0.8340277778, // Matches label height
+  },
+  {
     id: 'custom',
     name: 'Custom Template',
     description: 'Customizable grid layout',
