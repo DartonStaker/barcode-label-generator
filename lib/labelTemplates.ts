@@ -49,26 +49,137 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     verticalPitch: 0.8340277778, // Matches table row height (1201 twips)
   },
   {
-    id: '2-4-6-10-18-32-45',
-    name: '2,4,6,10,18,32,45 Label Template',
-    description: '9 rows x 5 columns (45 labels per page) - Flexible template supporting various label counts',
-    // A4 page size for consistent printing
-    pageWidth: 8.26771653543307, // A4 width: 21 cm = exactly 8.26771653543307 inches
-    pageHeight: 11.69291338582677, // A4 height: 29.7 cm = exactly 11.69291338582677 inches
-    // Label dimensions - similar to 65 UP template but adjusted for 9 rows
-    labelWidth: 1.5034722222, // ~38.19 mm
-    labelHeight: 0.8340277778, // ~21.18 mm
+    id: '2-up',
+    name: '2 UP Label Template',
+    description: '1 column x 2 rows (2 labels per page) - Large format labels',
+    pageWidth: 8.26771653543307, // A4 width
+    pageHeight: 11.69291338582677, // A4 height
+    labelWidth: 7.5, // ~190mm - large label width
+    labelHeight: 5.5, // ~140mm - large label height
+    columns: 1,
+    rows: 2,
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    marginLeft: 0.4,
+    marginRight: 0.4,
+    gapHorizontal: 0,
+    gapVertical: 0.1,
+    horizontalPitch: 7.5,
+    verticalPitch: 5.6,
+  },
+  {
+    id: '4-up',
+    name: '4 UP Label Template',
+    description: '2 columns x 2 rows (4 labels per page) - Medium format labels',
+    pageWidth: 8.26771653543307, // A4 width
+    pageHeight: 11.69291338582677, // A4 height
+    labelWidth: 3.75, // ~95mm
+    labelHeight: 5.5, // ~140mm
+    columns: 2,
+    rows: 2,
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    marginLeft: 0.4,
+    marginRight: 0.4,
+    gapHorizontal: 0.1,
+    gapVertical: 0.1,
+    horizontalPitch: 3.85,
+    verticalPitch: 5.6,
+  },
+  {
+    id: '6-up',
+    name: '6 UP Label Template',
+    description: '2 columns x 3 rows (6 labels per page) - Standard format labels',
+    pageWidth: 8.26771653543307, // A4 width
+    pageHeight: 11.69291338582677, // A4 height
+    labelWidth: 3.75, // ~95mm
+    labelHeight: 3.5, // ~89mm
+    columns: 2,
+    rows: 3,
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    marginLeft: 0.4,
+    marginRight: 0.4,
+    gapHorizontal: 0.1,
+    gapVertical: 0.1,
+    horizontalPitch: 3.85,
+    verticalPitch: 3.6,
+  },
+  {
+    id: '10-up',
+    name: '10 UP Label Template',
+    description: '2 columns x 5 rows (10 labels per page) - Avery 5163 style',
+    pageWidth: 8.26771653543307, // A4 width
+    pageHeight: 11.69291338582677, // A4 height
+    labelWidth: 3.75, // ~95mm (4" equivalent)
+    labelHeight: 2.0, // ~51mm (2" equivalent)
+    columns: 2,
+    rows: 5,
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    marginLeft: 0.4,
+    marginRight: 0.4,
+    gapHorizontal: 0.1,
+    gapVertical: 0.1,
+    horizontalPitch: 3.85,
+    verticalPitch: 2.1,
+  },
+  {
+    id: '18-up',
+    name: '18 UP Label Template',
+    description: '3 columns x 6 rows (18 labels per page) - Compact format labels',
+    pageWidth: 8.26771653543307, // A4 width
+    pageHeight: 11.69291338582677, // A4 height
+    labelWidth: 2.4, // ~61mm
+    labelHeight: 1.7, // ~43mm
+    columns: 3,
+    rows: 6,
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    marginLeft: 0.4,
+    marginRight: 0.4,
+    gapHorizontal: 0.08,
+    gapVertical: 0.08,
+    horizontalPitch: 2.48,
+    verticalPitch: 1.78,
+  },
+  {
+    id: '32-up',
+    name: '32 UP Label Template',
+    description: '4 columns x 8 rows (32 labels per page) - Small format labels',
+    pageWidth: 8.26771653543307, // A4 width
+    pageHeight: 11.69291338582677, // A4 height
+    labelWidth: 1.85, // ~47mm
+    labelHeight: 1.3, // ~33mm
+    columns: 4,
+    rows: 8,
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    marginLeft: 0.4,
+    marginRight: 0.4,
+    gapHorizontal: 0.06,
+    gapVertical: 0.06,
+    horizontalPitch: 1.91,
+    verticalPitch: 1.36,
+  },
+  {
+    id: '45-up',
+    name: '45 UP Label Template',
+    description: '5 columns x 9 rows (45 labels per page) - Small format labels',
+    pageWidth: 8.26771653543307, // A4 width
+    pageHeight: 11.69291338582677, // A4 height
+    labelWidth: 1.515, // ~38.5mm (matches Tower W115)
+    labelHeight: 1.177, // ~29.9mm (matches Tower W115)
     columns: 5,
     rows: 9,
-    // Margins - similar to 65 UP template
-    marginTop: 0.52,
-    marginBottom: 0.37,
-    marginLeft: 0.45,
-    marginRight: 0.27,
-    gapHorizontal: 0, // Horizontal pitch = label width, so no gap between labels
-    gapVertical: 0, // Vertical pitch = label height, so no gap between labels
-    horizontalPitch: 1.5034722222, // Matches label width
-    verticalPitch: 0.8340277778, // Matches label height
+    marginTop: 0.4,
+    marginBottom: 0.4,
+    marginLeft: 0.4,
+    marginRight: 0.4,
+    gapHorizontal: 0.05,
+    gapVertical: 0.05,
+    horizontalPitch: 1.565,
+    verticalPitch: 1.227,
   },
   {
     id: 'custom',
