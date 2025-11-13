@@ -53,6 +53,7 @@ export default function LabelTemplate({
   const containerHeight = containerSize.height;
   const format: 'CODE128' | 'EAN13' = barcodeFormat ?? 'CODE128';
   const effectiveFieldLayout = fieldLayout ?? DEFAULT_FIELD_LAYOUT;
+  const normalizeRotation = (angle: number) => ((angle % 360) + 360) % 360;
 
   const clampValue = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
 
@@ -511,8 +512,17 @@ export default function LabelTemplate({
     onFieldLayoutChange?.(field, placement);
   };
 
-  const handleFieldTransform = (field: LabelFieldKey, xPx: number, yPx: number, widthPx: number, heightPx: number) => {
+  const handleFieldTransform = (
+    field: LabelFieldKey,
+    xPx: number,
+    yPx: number,
+    widthPx: number,
+    heightPx: number,
+    rotationOverride?: number
+  ) => {
     if (!onFieldLayoutChange || containerWidth === 0 || containerHeight === 0) return;
+
+    const currentPlacement = effectiveFieldLayout[field] ?? DEFAULT_FIELD_LAYOUT[field];
 
     let widthFraction = clampValue(widthPx / containerWidth, 0.05, 1);
     let heightFraction = clampValue(heightPx / containerHeight, 0.05, 1);
@@ -526,12 +536,56 @@ export default function LabelTemplate({
       yFraction = 1 - heightFraction;
     }
 
+    const rotationValue =
+      typeof rotationOverride === 'number'
+        ? normalizeRotation(rotationOverride)
+        : normalizeRotation(currentPlacement.rotation ?? 0);
+
     emitFieldLayoutChange(field, {
       x: xFraction,
       y: yFraction,
       width: widthFraction,
       height: heightFraction,
+      rotation: rotationValue,
     });
+  };
+
+  const handleFieldRotateMouseDown = (
+    field: LabelFieldKey,
+    placement: FieldPlacement,
+    xPx: number,
+    yPx: number,
+    widthPx: number,
+    heightPx: number,
+    event: ReactMouseEvent<HTMLButtonElement>
+  ) => {
+    if (!onFieldLayoutChange || !containerRef.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onSelectLabel?.(labelIndex);
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const centerX = containerRect.left + xPx + widthPx / 2;
+    const centerY = containerRect.top + yPx + heightPx / 2;
+    const startRotation = placement.rotation ?? 0;
+    const startPointerAngle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+
+    const handleMove = (moveEvent: MouseEvent) => {
+      moveEvent.preventDefault();
+      const pointerAngle = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX);
+      const angleDelta = pointerAngle - startPointerAngle;
+      const newRotation = normalizeRotation(startRotation + (angleDelta * 180) / Math.PI);
+      handleFieldTransform(field, xPx, yPx, widthPx, heightPx, newRotation);
+    };
+
+    const handleUp = (upEvent: MouseEvent) => {
+      upEvent.preventDefault();
+      document.removeEventListener('mousemove', handleMove, true);
+      document.removeEventListener('mouseup', handleUp, true);
+    };
+
+    document.addEventListener('mousemove', handleMove, true);
+    document.addEventListener('mouseup', handleUp, true);
   };
 
   const renderField = (
@@ -550,12 +604,14 @@ export default function LabelTemplate({
     const top = placement.y * 100;
     const widthPercent = placement.width * 100;
     const heightPercent = placement.height * 100;
+    const currentPlacement = effectiveFieldLayout[field] ?? placement;
+    const rotation = currentPlacement.rotation ?? 0;
 
     if (isFieldEditing && containerWidth > 0 && containerHeight > 0 && onFieldLayoutChange) {
-      const widthPx = placement.width * containerWidth;
-      const heightPx = placement.height * containerHeight;
-      const xPx = placement.x * containerWidth;
-      const yPx = placement.y * containerHeight;
+      const widthPx = currentPlacement.width * containerWidth;
+      const heightPx = currentPlacement.height * containerHeight;
+      const xPx = currentPlacement.x * containerWidth;
+      const yPx = currentPlacement.y * containerHeight;
 
       return (
         <Rnd
@@ -565,13 +621,16 @@ export default function LabelTemplate({
           position={{ x: xPx, y: yPx }}
           onDragStart={() => onSelectLabel?.(labelIndex)}
           onDragStop={(_, data) => {
-            const latestPlacement = effectiveFieldLayout[field] ?? placement;
+            const latestPlacement = effectiveFieldLayout[field] ?? currentPlacement;
             const latestWidth = latestPlacement.width * containerWidth;
             const latestHeight = latestPlacement.height * containerHeight;
-            handleFieldTransform(field, data.x, data.y, latestWidth, latestHeight);
+            const latestRotation = latestPlacement.rotation ?? currentPlacement.rotation ?? 0;
+            handleFieldTransform(field, data.x, data.y, latestWidth, latestHeight, latestRotation);
           }}
           onResizeStop={(_, __, ref, ___, position) => {
-            handleFieldTransform(field, position.x, position.y, ref.offsetWidth, ref.offsetHeight);
+            const latestPlacement = effectiveFieldLayout[field] ?? currentPlacement;
+            const latestRotation = latestPlacement.rotation ?? currentPlacement.rotation ?? 0;
+            handleFieldTransform(field, position.x, position.y, ref.offsetWidth, ref.offsetHeight, latestRotation);
           }}
           enableResizing={{
             top: true,
@@ -584,24 +643,42 @@ export default function LabelTemplate({
             topLeft: true,
           }}
         >
-          <div
-            className={className}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: align,
-              justifyContent: justify,
-              padding: '4px',
-              boxSizing: 'border-box',
-              backgroundColor: 'rgba(255,255,255,0.85)',
-              border: '1px dashed rgba(59, 130, 246, 0.6)',
-              borderRadius: '4px',
-              cursor: 'move',
-            }}
-            onMouseDown={() => onSelectLabel?.(labelIndex)}
-          >
-            {content}
+          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+            <div
+              className={className}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: align,
+                justifyContent: justify,
+                padding: '4px',
+                boxSizing: 'border-box',
+                backgroundColor: 'rgba(255,255,255,0.85)',
+                border: '1px dashed rgba(59, 130, 246, 0.6)',
+                borderRadius: '4px',
+                cursor: 'move',
+                transform: `rotate(${rotation}deg)`,
+                transformOrigin: 'center center',
+              }}
+              onMouseDown={() => onSelectLabel?.(labelIndex)}
+            >
+              {content}
+            </div>
+            <button
+              type="button"
+              className="label-image-handle rotate"
+              onMouseDown={(event) =>
+                handleFieldRotateMouseDown(field, currentPlacement, xPx, yPx, widthPx, heightPx, event)
+              }
+              onClick={(event) => event.preventDefault()}
+              style={{
+                position: 'absolute',
+                top: -18,
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+            />
           </div>
         </Rnd>
       );
@@ -618,13 +695,25 @@ export default function LabelTemplate({
           width: `${widthPercent}%`,
           height: `${heightPercent}%`,
           display: 'flex',
-          alignItems: align,
-          justifyContent: justify,
+          alignItems: 'center',
+          justifyContent: 'center',
           padding: '2px',
           boxSizing: 'border-box',
         }}
       >
-        {content}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: align,
+            justifyContent: justify,
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: 'center center',
+          }}
+        >
+          {content}
+        </div>
       </div>
     );
   };

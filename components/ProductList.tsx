@@ -48,9 +48,7 @@ const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
 const MAX_IMAGES_PER_LABEL = 5;
 
 const cloneFieldLayout = (layout: FieldLayout): FieldLayout =>
-  Object.fromEntries(
-    Object.entries(layout).map(([key, placement]) => [key, { ...placement }])
-  ) as FieldLayout;
+  Object.fromEntries(Object.entries(layout).map(([key, placement]) => [key, { ...placement }])) as FieldLayout;
 
 const ENCODING_DETAILS = ENCODING_OPTIONS;
 
@@ -82,6 +80,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
   const [fieldLayout, setFieldLayout] = useState<FieldLayout>(() => cloneFieldLayout(DEFAULT_FIELD_LAYOUT));
 
   const clamp = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
+  const normalizeRotation = (angle: number) => ((angle % 360) + 360) % 360;
 
   const generateImageId = useCallback(() => {
     return `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -408,15 +407,22 @@ export default function ProductList({ products, initialTemplateId, encodingType,
   }, [activeImageId, activeLabelIndex, clamp, getImagesForLabel, handleImageChange]);
 
   const handleFieldLayoutChange = (field: LabelFieldKey, placement: FieldPlacement) => {
-    setFieldLayout((prev) => ({
-      ...prev,
-      [field]: {
-        x: clamp(placement.x, 0, 1),
-        y: clamp(placement.y, 0, 1),
-        width: clamp(placement.width, 0.05, 1),
-        height: clamp(placement.height, 0.05, 1),
-      },
-    }));
+    setFieldLayout((prev) => {
+      const current = prev[field] ?? DEFAULT_FIELD_LAYOUT[field];
+      return {
+        ...prev,
+        [field]: {
+          x: clamp(placement.x ?? current.x, 0, 1),
+          y: clamp(placement.y ?? current.y, 0, 1),
+          width: clamp(placement.width ?? current.width, 0.05, 1),
+          height: clamp(placement.height ?? current.height, 0.05, 1),
+          rotation:
+            typeof placement.rotation === 'number'
+              ? normalizeRotation(placement.rotation)
+              : normalizeRotation(current.rotation ?? DEFAULT_FIELD_LAYOUT[field].rotation),
+        },
+      };
+    });
   };
 
   const activeImages = useMemo(() => {
@@ -1899,6 +1905,9 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                   draggingImageId={draggingImageId}
                   onImageDrop={handleImageDrop}
                   barcodeFormat={barcodeFormat}
+                  fieldLayout={fieldLayout}
+                  isFieldEditing={isFieldEditing}
+                  onFieldLayoutChange={handleFieldLayoutChange}
                 />
               </div>
             </>
