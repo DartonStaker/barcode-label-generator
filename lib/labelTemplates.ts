@@ -21,7 +21,7 @@ export interface LabelTemplate {
 export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
   {
     id: 'lsa-65',
-    name: 'LSA-65 Label Template',
+    name: '65 UP Label Template',
     description: '13 rows x 5 columns (65 labels per page) - Matches physical label sheet with Word dialog pitches',
     // Physical label sheet measurements (extracted from Word template):
     // Top margin: 11.59 mm (657 twips), Bottom margin: 10.02 mm (~0.394")
