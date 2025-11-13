@@ -6,7 +6,7 @@ import LabelGrid from './LabelGrid';
 import { AVAILABLE_TEMPLATES, LabelTemplate as LabelTemplateConfig, getTemplateById, getLabelPosition, calculateLabelPositions } from '@/lib/labelTemplates';
 import { useReactToPrint } from 'react-to-print';
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 interface ProductListProps {
   products: Product[];
@@ -1503,7 +1503,7 @@ export default function ProductList({ products, initialTemplateId }: ProductList
                             isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-400'
                           }`}
                         >
-                          <Image
+                          <NextImage
                             src={image.src}
                             alt="Label overlay preview"
                             width={64}
