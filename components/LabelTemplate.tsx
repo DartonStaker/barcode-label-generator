@@ -607,7 +607,7 @@ export default function LabelTemplate({
     const currentPlacement = effectiveFieldLayout[field] ?? placement;
     const rotation = currentPlacement.rotation ?? 0;
 
-    if (isFieldEditing && containerWidth > 0 && containerHeight > 0 && onFieldLayoutChange) {
+    if (containerWidth > 0 && containerHeight > 0 && onFieldLayoutChange) {
       const widthPx = currentPlacement.width * containerWidth;
       const heightPx = currentPlacement.height * containerHeight;
       const xPx = currentPlacement.x * containerWidth;
