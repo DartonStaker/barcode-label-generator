@@ -1402,8 +1402,7 @@ export default function ProductList({ products, initialTemplateId }: ProductList
         </div>
       </div>
 
-      {selectedProducts.size > 0 && (
-        <div className="mb-6 bg-white rounded-lg shadow-md p-6">
+      <div className="mb-6 bg-white rounded-lg shadow-md p-6">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-800">Media Overlays</h3>
@@ -1425,10 +1424,9 @@ export default function ProductList({ products, initialTemplateId }: ProductList
             </label>
           </div>
 
-          {!applyImagesToAll && (
-            <div className="mt-2 text-xs text-gray-500">
-              Editing label <span className="font-semibold text-gray-700">#{activeLabelIndex + 1}</span>. Click any label in the preview
-              grid to select it.
+          {!applyImagesToAll && selectedProducts.size === 0 && (
+            <div className="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+              Select at least one product to apply images to individual labels, or leave “Apply images to all labels” checked.
             </div>
           )}
 
