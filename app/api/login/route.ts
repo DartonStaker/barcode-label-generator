@@ -16,6 +16,10 @@ const allowedUsers: AllowedUser[] = [
     email: process.env.SECONDARY_EMAIL || 'bijancan1996@gmail.com',
     password: process.env.SECONDARY_PASSWORD || 'BijancaLiam911221',
   },
+  {
+    email: process.env.GUEST_EMAIL || 'waseem@guest.co.za',
+    password: process.env.GUEST_PASSWORD || '0765869789',
+  },
 ].filter((user) => user.email && user.password);
 
 export async function POST(request: Request) {
