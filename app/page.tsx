@@ -73,7 +73,7 @@ export default function Home() {
   const handleDownloadTemplate = () => {
     const workbook = XLSX.utils.book_new();
 
-    const templateHeader = ['Barcode Numbers', '', '', 'Description', '', 'Price (R)', '', '', '', '', '', '', ''];
+    const templateHeader = ['Barcode Numbers', 'Brand', '', 'Description', '', 'Price (R)', '', '', '', '', '', '', ''];
     const blankRow = new Array(templateHeader.length).fill('');
     const templateData = [templateHeader];
 
@@ -83,13 +83,13 @@ export default function Home() {
 
     const templateSheet = XLSX.utils.aoa_to_sheet(templateData);
     templateSheet['!cols'] = [
-      { wch: 20 },
-      { wch: 3 },
-      { wch: 3 },
-      { wch: 35 },
-      { wch: 3 },
-      { wch: 12 },
-      { wch: 3 },
+      { wch: 20 }, // Column A: Barcode Numbers
+      { wch: 20 }, // Column B: Brand
+      { wch: 3 },  // Column C: (empty)
+      { wch: 35 }, // Column D: Description
+      { wch: 3 },  // Column E: (empty)
+      { wch: 12 }, // Column F: Price (R)
+      { wch: 3 },  // Column G onwards: (empty)
       { wch: 3 },
       { wch: 3 },
       { wch: 3 },
@@ -102,10 +102,11 @@ export default function Home() {
       ['How to use this template'],
       ['1. Enter each product on a new row starting from row 2.'],
       ['2. Column A (Barcode Numbers): 12-13 digit barcode or product code.'],
-      ['3. Column D (Description): Product name or description that appears on the label.'],
-      ['4. Column F (Price (R)): Selling price (numbers or values like "R 65.00").'],
-      ['5. Leave other columns blank—they are reserved to match the original Summer 2025 Price List layout.'],
-      ['6. Save the file and import it using the Upload Excel File control on the main page.'],
+      ['3. Column B (Brand): Brand name that appears above the description on the label.'],
+      ['4. Column D (Description): Product name or description that appears on the label.'],
+      ['5. Column F (Price (R)): Selling price (numbers or values like "R 65.00").'],
+      ['6. Leave other columns blank—they are reserved to match the original Summer 2025 Price List layout.'],
+      ['7. Save the file and import it using the Upload Excel File control on the main page.'],
     ];
 
     const instructionsSheet = XLSX.utils.aoa_to_sheet(instructionsData);

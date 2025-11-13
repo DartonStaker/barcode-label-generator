@@ -192,8 +192,8 @@ export default function LabelTemplate({ product, index, template }: LabelTemplat
   const descFontSize = isSmallLabel ? '5.5pt' : labelHeight < 2 ? '6pt' : '6.5pt';
   // Reduce barcode height significantly for small labels to leave room for description
   // Slightly reduced size and adjusted for better centering
-  const barcodeHeight = isSmallLabel ? 16 : labelHeight < 2 ? 20 : 24;
-  const barcodeWidth = isSmallLabel ? 0.7 : 0.9;
+  const barcodeHeight = isSmallLabel ? 18 : labelHeight < 2 ? 22 : 26;
+  const barcodeWidth = isSmallLabel ? 1.05 : 1.2;
 
   // CRITICAL: Log extracted values to see if data extraction is working
   if (index === 0 || index === 10) {
@@ -264,7 +264,7 @@ export default function LabelTemplate({ product, index, template }: LabelTemplat
         style={{ 
           flexShrink: 0,
           minHeight: 0,
-          marginTop: isSmallLabel ? '2px' : '3px', // Move barcode down slightly
+          marginTop: isSmallLabel ? '1px' : '2px', // Move barcode down slightly
           marginBottom: '1px',
           padding: '0',
           width: '100%',
