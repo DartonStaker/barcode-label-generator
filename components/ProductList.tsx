@@ -1452,7 +1452,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               style={{ color: '#111827' }}
               placeholder="1"
-              disabled={!hasSelectedTemplate && selectedTemplateId !== 'custom'}
+              disabled={!hasSelectedTemplate}
             />
             <p className="text-xs text-gray-500 mt-1">
               Enter 1-100 pages (default: 1)
