@@ -744,6 +744,9 @@ export default function LabelTemplate({
 
       <div
         className={`label-image-layer${allowInteraction ? ' interactive' : ''}`}
+        style={{
+          pointerEvents: isFieldEditing ? 'none' : allowInteraction ? 'auto' : 'none',
+        }}
       >
         {overlays.map((overlay) => {
           const widthPx = containerWidth * overlay.width;
