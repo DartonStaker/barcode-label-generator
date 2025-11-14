@@ -590,7 +590,7 @@ export default function LabelTemplate({
 
   const renderField = (
     field: LabelFieldKey,
-    content: ReactNode,
+    renderContent: (scale: { widthScale: number; heightScale: number }) => ReactNode,
     {
       justify = 'flex-start',
       align = 'center',
@@ -599,6 +599,13 @@ export default function LabelTemplate({
   ) => {
     const placement = effectiveFieldLayout[field];
     if (!placement) return null;
+
+    const basePlacement = DEFAULT_FIELD_LAYOUT[field];
+    const baseWidth = Math.max(basePlacement.width, 0.01);
+    const baseHeight = Math.max(basePlacement.height, 0.01);
+    const widthScale = placement.width / baseWidth;
+    const heightScale = placement.height / baseHeight;
+    const content = renderContent({ widthScale, heightScale });
 
     const left = placement.x * 100;
     const top = placement.y * 100;
@@ -852,90 +859,106 @@ export default function LabelTemplate({
       >
         {renderField(
           'price',
-          <div
-            style={{
-              width: '100%',
-              fontSize: priceFontSize,
-              lineHeight: 1,
-              fontWeight: 'bold',
-              textAlign: 'left',
-              color: '#000000',
-            }}
-          >
-            {priceDisplay || (isFieldEditing ? 'Price' : '')}
-          </div>,
+          ({ widthScale, heightScale }) => (
+            <div
+              style={{
+                width: '100%',
+                fontSize: priceFontSize * Math.max(widthScale, heightScale),
+                lineHeight: 1,
+                fontWeight: 'bold',
+                textAlign: 'left',
+                color: '#000000',
+              }}
+            >
+              {priceDisplay || (isFieldEditing ? 'Price' : '')}
+            </div>
+          ),
           { justify: 'flex-start', align: 'flex-start' }
         )}
 
         {renderField(
           'code',
-          <div
-            style={{
-              width: '100%',
-              fontSize: codeFontSize,
-              lineHeight: 1,
-              textAlign: 'center',
-              color: '#000000',
-              wordBreak: 'break-word',
-            }}
-          >
-            {displayCode || (isFieldEditing ? 'Barcode Number' : '')}
-          </div>,
+          ({ widthScale, heightScale }) => (
+            <div
+              style={{
+                width: '100%',
+                fontSize: codeFontSize * Math.max(widthScale, heightScale),
+                lineHeight: 1,
+                textAlign: 'center',
+                color: '#000000',
+                wordBreak: 'break-word',
+              }}
+            >
+              {displayCode || (isFieldEditing ? 'Barcode Number' : '')}
+            </div>
+          ),
           { justify: 'center', align: 'center' }
         )}
 
         {renderField(
           'barcode',
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {barcodeValue ? (
-              <Barcode value={barcodeValue} format={format} width={barcodeWidth} height={barcodeHeight} displayValue={false} />
-            ) : isFieldEditing ? (
-              <span className="text-xs text-blue-600">Barcode area</span>
-            ) : null}
-          </div>,
+          ({ widthScale, heightScale }) => (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {barcodeValue ? (
+                <Barcode
+                  value={barcodeValue}
+                  format={format}
+                  width={barcodeWidth * widthScale}
+                  height={barcodeHeight * heightScale}
+                  displayValue={false}
+                />
+              ) : isFieldEditing ? (
+                <span className="text-xs text-blue-600">Barcode area</span>
+              ) : null}
+            </div>
+          ),
           { justify: 'center', align: 'center', className: 'field-barcode' }
         )}
 
         {renderField(
           'line1',
-          <div
-            style={{
-              width: '100%',
-              fontSize: descFontSize,
-              lineHeight: 1.05,
-              textAlign: 'left',
-              color: '#000000',
-              fontWeight: 500,
-              wordBreak: 'break-word',
-            }}
-          >
-            {line1 || (isFieldEditing ? 'Brand / Line 1' : '')}
-          </div>
+          ({ widthScale, heightScale }) => (
+            <div
+              style={{
+                width: '100%',
+                fontSize: descFontSize * Math.max(widthScale, heightScale),
+                lineHeight: 1.05,
+                textAlign: 'left',
+                color: '#000000',
+                fontWeight: 500,
+                wordBreak: 'break-word',
+              }}
+            >
+              {line1 || (isFieldEditing ? 'Brand / Line 1' : '')}
+            </div>
+          )
         )}
 
         {renderField(
           'line2',
-          <div
-            style={{
-              width: '100%',
-              fontSize: descFontSize,
-              lineHeight: 1.05,
-              textAlign: 'left',
-              color: '#000000',
-              fontWeight: 500,
-              wordBreak: 'break-word',
-            }}
-          >
-            {line2 || (!line1 && description ? description : isFieldEditing ? 'Description / Line 2' : '')}
-          </div>
+          ({ widthScale, heightScale }) => (
+            <div
+              style={{
+                width: '100%',
+                fontSize: descFontSize * Math.max(widthScale, heightScale),
+                lineHeight: 1.05,
+                textAlign: 'left',
+                color: '#000000',
+                fontWeight: 500,
+                wordBreak: 'break-word',
+              }}
+            >
+              {line2 || (!line1 && description ? description : isFieldEditing ? 'Description / Line 2' : '')}
+            </div>
+          )
         )}
       </div>
     </div>
