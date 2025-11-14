@@ -469,6 +469,15 @@ export default function LabelTemplate({
   const priceFontSize = isSmallLabel ? '6.5pt' : labelHeight < 2 ? '7.5pt' : '9pt';
   const codeFontSize = isSmallLabel ? '5.5pt' : labelHeight < 2 ? '6.5pt' : '7.5pt';
   const descFontSize = isSmallLabel ? '5.5pt' : labelHeight < 2 ? '6pt' : '6.5pt';
+  const scaleFontSize = (baseSize: string, scale: number) => {
+    const numeric = parseFloat(baseSize);
+    if (!Number.isFinite(numeric)) {
+      return baseSize;
+    }
+    const unit = baseSize.replace(`${numeric}`, '').trim() || 'pt';
+    const scaled = numeric * scale;
+    return `${parseFloat(scaled.toFixed(3))}${unit}`;
+  };
   // Reduce barcode height significantly for small labels to leave room for description
   // Slightly reduced size and adjusted for better centering
   const barcodeHeight = isSmallLabel ? 18 : labelHeight < 2 ? 22 : 26;
@@ -863,7 +872,7 @@ export default function LabelTemplate({
             <div
               style={{
                 width: '100%',
-                fontSize: priceFontSize * Math.max(widthScale, heightScale),
+                fontSize: scaleFontSize(priceFontSize, Math.max(widthScale, heightScale)),
                 lineHeight: 1,
                 fontWeight: 'bold',
                 textAlign: 'left',
@@ -882,7 +891,7 @@ export default function LabelTemplate({
             <div
               style={{
                 width: '100%',
-                fontSize: codeFontSize * Math.max(widthScale, heightScale),
+                fontSize: scaleFontSize(codeFontSize, Math.max(widthScale, heightScale)),
                 lineHeight: 1,
                 textAlign: 'center',
                 color: '#000000',
@@ -929,7 +938,7 @@ export default function LabelTemplate({
             <div
               style={{
                 width: '100%',
-                fontSize: descFontSize * Math.max(widthScale, heightScale),
+                fontSize: scaleFontSize(descFontSize, Math.max(widthScale, heightScale)),
                 lineHeight: 1.05,
                 textAlign: 'left',
                 color: '#000000',
@@ -948,7 +957,7 @@ export default function LabelTemplate({
             <div
               style={{
                 width: '100%',
-                fontSize: descFontSize * Math.max(widthScale, heightScale),
+                fontSize: scaleFontSize(descFontSize, Math.max(widthScale, heightScale)),
                 lineHeight: 1.05,
                 textAlign: 'left',
                 color: '#000000',
