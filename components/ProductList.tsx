@@ -1373,7 +1373,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
           {/* Labels Per Page */}
           <div>
             <label htmlFor="labels-per-page" className="block text-sm font-medium text-gray-700 mb-2">
-              Labels Per Page {hasSelectedTemplate || selectedTemplateId === 'custom' ? `(max: ${maxLabelsPerPage})` : '(select template first)'}
+              Labels Per Page {hasSelectedTemplate ? `(max: ${maxLabelsPerPage})` : '(select template first)'}
             </label>
             <input
               id="labels-per-page"
@@ -1407,13 +1407,11 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               style={{ color: '#111827' }}
-              placeholder={hasSelectedTemplate || selectedTemplateId === 'custom' ? `Max: ${maxLabelsPerPage}` : 'Select template'}
-              disabled={!hasSelectedTemplate && selectedTemplateId !== 'custom'}
+              placeholder={hasSelectedTemplate ? `Max: ${maxLabelsPerPage}` : 'Select template'}
+              disabled={!hasSelectedTemplate}
             />
             <p className="text-xs text-gray-500 mt-1">
-              {hasSelectedTemplate || selectedTemplateId === 'custom'
-                ? `Leave empty for maximum (${maxLabelsPerPage})`
-                : 'Pick a template to enable this control.'}
+              {hasSelectedTemplate ? `Leave empty for maximum (${maxLabelsPerPage})` : 'Pick a template to enable this control.'}
             </p>
           </div>
 
@@ -1471,22 +1469,18 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               <div>Selected: <strong>{selectedProducts.size}</strong></div>
               <div>Labels/Page:{' '}
                 <strong>
-                  {hasSelectedTemplate || selectedTemplateId === 'custom'
-                    ? labelsPerPage || maxLabelsPerPage
-                    : '---'}
+                  {hasSelectedTemplate ? labelsPerPage || maxLabelsPerPage : '---'}
                 </strong>
               </div>
               <div>Total Pages:{' '}
                 <strong>
-                  {hasSelectedTemplate || selectedTemplateId === 'custom' ? totalPages : '---'}
+                  {hasSelectedTemplate ? totalPages : '---'}
                 </strong>
               </div>
               <div>
                 Will Generate:{' '}
                 <strong>
-                  {hasSelectedTemplate || selectedTemplateId === 'custom'
-                    ? `${actualPages} page${actualPages !== 1 ? 's' : ''}`
-                    : '---'}
+                  {hasSelectedTemplate ? `${actualPages} page${actualPages !== 1 ? 's' : ''}` : '---'}
                 </strong>
               </div>
               <div>
