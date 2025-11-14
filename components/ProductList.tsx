@@ -1973,6 +1973,10 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                       box-sizing: border-box !important;
                       border: none !important;
                     }
+                    .label-template .react-rnd__handle,
+                    .label-template .label-image-handle {
+                      display: none !important;
+                    }
                   }
                 `
               }} />
