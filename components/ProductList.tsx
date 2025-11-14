@@ -46,6 +46,7 @@ const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
 };
 
 const MAX_IMAGES_PER_LABEL = 5;
+const SELECT_TEMPLATE_OPTION = 'select-template';
 
 const cloneFieldLayout = (layout: FieldLayout): FieldLayout =>
   Object.fromEntries(Object.entries(layout).map(([key, placement]) => [key, { ...placement }])) as FieldLayout;
@@ -71,9 +72,10 @@ const mergeWithDefaultLayout = (layout: FieldLayout): FieldLayout => {
 
 export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || 'lsa-65');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || SELECT_TEMPLATE_OPTION);
   const encodingInfo = ENCODING_DETAILS[encodingType];
   const barcodeFormat = encodingInfo.barcodeFormat;
+  const hasSelectedTemplate = selectedTemplateId !== SELECT_TEMPLATE_OPTION;
   
   // Update selected template when initialTemplateId changes
   useEffect(() => {
@@ -95,9 +97,20 @@ export default function ProductList({ products, initialTemplateId, encodingType,
   const [imageLimitMessage, setImageLimitMessage] = useState<string | null>(null);
   const [isFieldEditing, setIsFieldEditing] = useState<boolean>(false);
   const [fieldLayout, setFieldLayout] = useState<FieldLayout>(() => cloneFieldLayout(DEFAULT_FIELD_LAYOUT));
+  const [showHints, setShowHints] = useState<boolean>(true);
+  const [templateHintVisible, setTemplateHintVisible] = useState<boolean>(false);
 
   const clamp = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
   const normalizeRotation = (angle: number) => ((angle % 360) + 360) % 360;
+
+  useEffect(() => {
+    if (!showHints || hasSelectedTemplate || products.length === 0) {
+      setTemplateHintVisible(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setTemplateHintVisible(true), 800);
+    return () => window.clearTimeout(timer);
+  }, [showHints, hasSelectedTemplate, products.length]);
 
   const generateImageId = useCallback(() => {
     return `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -612,9 +625,17 @@ export default function ProductList({ products, initialTemplateId, encodingType,
     }
   }, [customTemplateConfig, selectedTemplateId]);
   
-  const selectedTemplate = selectedTemplateId === 'custom' 
+  const selectedTemplate = selectedTemplateId === 'custom'
     ? createTemplateFromConfig()
-    : (getAllTemplateById(selectedTemplateId) || allTemplates[0]);
+    : hasSelectedTemplate
+      ? (getAllTemplateById(selectedTemplateId) || allTemplates[0])
+      : allTemplates[0];
+  const templateForDisplay =
+    selectedTemplateId === 'custom'
+      ? selectedTemplate
+      : hasSelectedTemplate
+        ? selectedTemplate
+        : null;
   const maxLabelsPerPage = selectedTemplate.columns * selectedTemplate.rows;
   
   // Calculate effective labels per page early so it can be used in CSS generation
@@ -930,42 +951,30 @@ export default function ProductList({ products, initialTemplateId, encodingType,
             <p className="text-sm text-blue-700">{encodingInfo.description}</p>
             <p className="text-xs text-blue-600 mt-1">{encodingInfo.helperText}</p>
           </div>
-          <button
-            type="button"
-            onClick={onChangeEncoding}
-            className="inline-flex items-center justify-center rounded-md border border-blue-400 bg-white px-4 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:bg-blue-100"
-          >
-            Change Encoding
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-800">Field Layout Controls</h3>
-          <p className="text-xs text-gray-600">
-            Toggle to reposition price, barcode, brand, and description directly on the label. Changes apply to every label.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {isFieldEditing && (
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-blue-800">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-blue-300 rounded"
+                checked={showHints}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setShowHints(checked);
+                  if (!checked) {
+                    setTemplateHintVisible(false);
+                  }
+                }}
+              />
+              Show hints
+            </label>
             <button
               type="button"
-              onClick={() => setFieldLayout(cloneFieldLayout(DEFAULT_FIELD_LAYOUT))}
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-100"
+              onClick={onChangeEncoding}
+              className="inline-flex items-center justify-center rounded-md border border-blue-400 bg-white px-4 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:bg-blue-100"
             >
-              Reset Layout
+              Change Encoding
             </button>
-          )}
-          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-            <input
-              type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              checked={isFieldEditing}
-              onChange={(event) => setIsFieldEditing(event.target.checked)}
-            />
-            Enable field positioning
-          </label>
+          </div>
         </div>
       </div>
 
@@ -974,9 +983,16 @@ export default function ProductList({ products, initialTemplateId, encodingType,
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Template Selection */}
           <div>
-            <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-2">
-              Label Template
-            </label>
+            <div className="relative">
+              <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-2">
+                Label Template
+              </label>
+              {showHints && templateHintVisible && (
+                <div className="absolute left-full top-0 ml-3 w-52 rounded-md border border-blue-300 bg-white px-3 py-2 text-xs font-medium text-blue-700 shadow-lg">
+                  Select a label template to match your sheet layout. You can change this later.
+                </div>
+              )}
+            </div>
             <select
               id="template-select"
               value={selectedTemplateId}
@@ -984,10 +1000,14 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                 const newValue = e.target.value;
                 setSelectedTemplateId(newValue);
                 setLabelsPerPage(undefined); // Reset to max
+                setTemplateHintVisible(false);
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer text-gray-900"
               style={{ color: '#1f2937' }}
             >
+              <option value={SELECT_TEMPLATE_OPTION} disabled>
+                Select Template…
+              </option>
               {allTemplates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name} ({template.rows}×{template.columns})
@@ -996,7 +1016,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               <option value="custom">Custom Template (Configure Below)</option>
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              {selectedTemplate.description}
+              {templateForDisplay ? templateForDisplay.description : 'Choose a template to see its details.'}
             </p>
           </div>
 
@@ -1353,7 +1373,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
           {/* Labels Per Page */}
           <div>
             <label htmlFor="labels-per-page" className="block text-sm font-medium text-gray-700 mb-2">
-              Labels Per Page (max: {maxLabelsPerPage})
+              Labels Per Page {hasSelectedTemplate || selectedTemplateId === 'custom' ? `(max: ${maxLabelsPerPage})` : '(select template first)'}
             </label>
             <input
               id="labels-per-page"
@@ -1387,10 +1407,13 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               style={{ color: '#111827' }}
-              placeholder={`Max: ${maxLabelsPerPage}`}
+              placeholder={hasSelectedTemplate || selectedTemplateId === 'custom' ? `Max: ${maxLabelsPerPage}` : 'Select template'}
+              disabled={!hasSelectedTemplate && selectedTemplateId !== 'custom'}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Leave empty for maximum ({maxLabelsPerPage})
+              {hasSelectedTemplate || selectedTemplateId === 'custom'
+                ? `Leave empty for maximum (${maxLabelsPerPage})`
+                : 'Pick a template to enable this control.'}
             </p>
           </div>
 
@@ -1431,6 +1454,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               style={{ color: '#111827' }}
               placeholder="1"
+              disabled={!hasSelectedTemplate && selectedTemplateId !== 'custom'}
             />
             <p className="text-xs text-gray-500 mt-1">
               Enter 1-100 pages (default: 1)
@@ -1445,10 +1469,34 @@ export default function ProductList({ products, initialTemplateId, encodingType,
             <div className="text-sm text-gray-600 space-y-1">
               <div>Total Products: <strong>{products.length}</strong></div>
               <div>Selected: <strong>{selectedProducts.size}</strong></div>
-              <div>Labels/Page: <strong>{labelsPerPage || maxLabelsPerPage}</strong></div>
-              <div>Total Pages: <strong>{totalPages}</strong></div>
-              <div>Will Generate: <strong>{actualPages} page{actualPages !== 1 ? 's' : ''}</strong></div>
-              <div>Label Size: <strong>{selectedTemplate.labelWidth}&quot; × {selectedTemplate.labelHeight}&quot;</strong></div>
+              <div>Labels/Page:{' '}
+                <strong>
+                  {hasSelectedTemplate || selectedTemplateId === 'custom'
+                    ? labelsPerPage || maxLabelsPerPage
+                    : '---'}
+                </strong>
+              </div>
+              <div>Total Pages:{' '}
+                <strong>
+                  {hasSelectedTemplate || selectedTemplateId === 'custom' ? totalPages : '---'}
+                </strong>
+              </div>
+              <div>
+                Will Generate:{' '}
+                <strong>
+                  {hasSelectedTemplate || selectedTemplateId === 'custom'
+                    ? `${actualPages} page${actualPages !== 1 ? 's' : ''}`
+                    : '---'}
+                </strong>
+              </div>
+              <div>
+                Label Size:{' '}
+                <strong>
+                  {templateForDisplay
+                    ? `${templateForDisplay.labelWidth}" × ${templateForDisplay.labelHeight}"`
+                    : '---'}
+                </strong>
+              </div>
             </div>
           </div>
         </div>
@@ -1731,6 +1779,41 @@ export default function ProductList({ products, initialTemplateId, encodingType,
         </div>
       </div>
 
+      <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Field Layout Controls</h3>
+          <p className="text-xs text-gray-600">
+            Toggle to reposition price, barcode, brand, and description directly on the label. Changes apply to every label.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {isFieldEditing && (
+            <button
+              type="button"
+              onClick={() => setFieldLayout(cloneFieldLayout(DEFAULT_FIELD_LAYOUT))}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-100"
+            >
+              Reset Layout
+            </button>
+          )}
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              checked={isFieldEditing}
+              onChange={(event) => setIsFieldEditing(event.target.checked)}
+            />
+            Enable field positioning
+          </label>
+        </div>
+      </div>
+
+      {!hasSelectedTemplate && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Choose a label template to match your sheet layout. Hints can be toggled in the banner above.
+        </div>
+      )}
+
       {/* Header with Print Button */}
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
@@ -1758,7 +1841,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
       </div>
 
           {/* Label Grid */}
-          {selectedProducts.size > 0 && (
+          {hasSelectedTemplate && selectedProducts.size > 0 && (
             <>
               {/* Inject CSS directly into DOM for both screen and print */}
               {/* Key ensures React re-renders style tag when effectiveLabelsPerPage changes */}
