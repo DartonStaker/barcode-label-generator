@@ -52,6 +52,23 @@ const cloneFieldLayout = (layout: FieldLayout): FieldLayout =>
 
 const ENCODING_DETAILS = ENCODING_OPTIONS;
 
+const mergeWithDefaultLayout = (layout: FieldLayout): FieldLayout => {
+  const merged = cloneFieldLayout(DEFAULT_FIELD_LAYOUT);
+  (Object.keys(DEFAULT_FIELD_LAYOUT) as LabelFieldKey[]).forEach((key) => {
+    if (layout[key]) {
+      merged[key] = {
+        ...merged[key],
+        ...layout[key],
+        rotation:
+          typeof layout[key].rotation === 'number'
+            ? ((layout[key].rotation % 360) + 360) % 360
+            : merged[key].rotation,
+      };
+    }
+  });
+  return merged;
+};
+
 export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || 'lsa-65');
@@ -424,6 +441,8 @@ export default function ProductList({ products, initialTemplateId, encodingType,
       };
     });
   };
+
+  const effectiveFieldLayout = useMemo(() => mergeWithDefaultLayout(fieldLayout), [fieldLayout]);
 
   const activeImages = useMemo(() => {
     return applyImagesToAll ? globalLabelImages : labelImageMap[activeLabelIndex] ?? [];
@@ -1905,7 +1924,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                   draggingImageId={draggingImageId}
                   onImageDrop={handleImageDrop}
                   barcodeFormat={barcodeFormat}
-                  fieldLayout={fieldLayout}
+                  fieldLayout={effectiveFieldLayout}
                   isFieldEditing={isFieldEditing}
                   onFieldLayoutChange={handleFieldLayoutChange}
                 />
