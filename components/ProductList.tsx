@@ -873,6 +873,9 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               bottom: auto !important;
               transform: none !important;
             }
+            .label-page[data-is-last="true"] {
+              page-break-after: auto !important;
+            }
             .label-cell {
               position: absolute !important;
               margin: 0 !important;
@@ -2029,6 +2032,9 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                       bottom: auto !important;
                       transform: none !important;
                       border: none !important;
+                    }
+                    .label-page[data-is-last="true"] {
+                      page-break-after: auto !important;
                     }
                     .label-cell {
                       position: absolute !important;

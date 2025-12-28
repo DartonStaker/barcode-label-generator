@@ -116,11 +116,12 @@ export default function LabelGrid({
         <div
           key={pageIndex}
           className="label-page"
+          data-is-last={pageIndex === pagesToShow.length - 1 ? 'true' : 'false'}
           style={{
             width: `${pageWidthPx}px`,
             height: `${pageHeightPx}px`,
             position: 'relative',
-            pageBreakAfter: 'always',
+            pageBreakAfter: pageIndex === pagesToShow.length - 1 ? 'auto' : 'always',
             backgroundColor: 'white',
             margin: '0 auto',
             marginBottom: '20px',
