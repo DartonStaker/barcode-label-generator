@@ -208,12 +208,12 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     verticalPitch: 0.8346456693, // 2.12 cm
     columnOffsets: [
       -0.196850394, // -5 mm for column 1 (unchanged)
-      -0.0787401575, // -2 mm for column 2 (moved 2 mm right)
+      -0.0866141732, // -2.2 mm for column 2 (additional 0.2 mm left)
       -0.0000000000, // 0 mm for column 3 (1 mm left from prior +1 mm)
       0.1181102362, // +3 mm for column 4 (1 mm left from prior +4 mm)
       0.196850394, // +5 mm for column 5 (0.4 mm left from prior +5.4 mm)
     ],
-    rowOffset: -0.0157480315, // -0.4 mm vertical adjustment
+    rowOffset: -0.0078740158, // -0.2 mm vertical adjustment (slightly down from previous)
   },
   {
     id: 'custom',
