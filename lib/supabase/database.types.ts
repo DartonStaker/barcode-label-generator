@@ -42,33 +42,39 @@ export interface Database {
         Row: {
           id: string
           title: string
-          type: 'url' | 'discount' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'vcard'
+          type: 'url' | 'discount' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'vcard' | 'whatsapp' | 'pdf' | 'app' | 'images' | 'video' | 'social_media' | 'event' | '2d_barcode'
           status: 'active' | 'inactive' | 'archived'
           payload: string
           short_url: string
           scans: number
+          design_data: Json | null
+          expiration_date: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           title: string
-          type: 'url' | 'discount' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'vcard'
+          type: 'url' | 'discount' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'vcard' | 'whatsapp' | 'pdf' | 'app' | 'images' | 'video' | 'social_media' | 'event' | '2d_barcode'
           status?: 'active' | 'inactive' | 'archived'
           payload: string
           short_url: string
           scans?: number
+          design_data?: Json | null
+          expiration_date?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           title?: string
-          type?: 'url' | 'discount' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'vcard'
+          type?: 'url' | 'discount' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'vcard' | 'whatsapp' | 'pdf' | 'app' | 'images' | 'video' | 'social_media' | 'event' | '2d_barcode'
           status?: 'active' | 'inactive' | 'archived'
           payload?: string
           short_url?: string
           scans?: number
+          design_data?: Json | null
+          expiration_date?: string | null
           created_at?: string
           updated_at?: string
         }

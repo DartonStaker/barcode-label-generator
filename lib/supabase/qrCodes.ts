@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import { QRCode, QRCodeType, QRCodeStatus, generateShortUrlSlug, formatQRPayload } from '../qrCode';
+import { QRCode, QRCodeType, QRCodeStatus, QRCodeDesign, generateShortUrlSlug, formatQRPayload } from '../qrCode';
 
 export interface QRCodeFilters {
   search?: string;
@@ -13,6 +13,8 @@ export interface CreateQRCodeData {
   status?: QRCodeStatus;
   payload: string;
   short_url?: string;
+  design_data?: QRCodeDesign | null;
+  expiration_date?: string | null;
 }
 
 export interface UpdateQRCodeData {
@@ -20,6 +22,8 @@ export interface UpdateQRCodeData {
   type?: QRCodeType;
   status?: QRCodeStatus;
   payload?: string;
+  design_data?: QRCodeDesign | null;
+  expiration_date?: string | null;
 }
 
 /**
@@ -59,6 +63,8 @@ export async function getQRCodesFromSupabase(filters?: QRCodeFilters): Promise<Q
     payload: row.payload,
     short_url: row.short_url,
     scans: row.scans,
+    design_data: (row.design_data as QRCodeDesign) || null,
+    expiration_date: row.expiration_date || null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   }));
@@ -92,6 +98,8 @@ export async function getQRCodeById(id: string): Promise<QRCode | null> {
     payload: data.payload,
     short_url: data.short_url,
     scans: data.scans,
+    design_data: (data.design_data as QRCodeDesign) || null,
+    expiration_date: data.expiration_date || null,
     created_at: data.created_at,
     updated_at: data.updated_at,
   };
@@ -124,6 +132,8 @@ export async function getQRCodeByShortUrl(shortUrl: string): Promise<QRCode | nu
     payload: data.payload,
     short_url: data.short_url,
     scans: data.scans,
+    design_data: (data.design_data as QRCodeDesign) || null,
+    expiration_date: data.expiration_date || null,
     created_at: data.created_at,
     updated_at: data.updated_at,
   };
@@ -168,7 +178,7 @@ export async function createQRCodeInSupabase(data: CreateQRCodeData): Promise<QR
   // Generate unique short URL if not provided
   const shortUrl = data.short_url || (await generateUniqueShortUrl());
 
-  const insertData = {
+  const insertData: any = {
     title: data.title,
     type: data.type,
     status: data.status || 'active',
@@ -176,6 +186,13 @@ export async function createQRCodeInSupabase(data: CreateQRCodeData): Promise<QR
     short_url: shortUrl,
     scans: 0,
   };
+
+  if (data.design_data) {
+    insertData.design_data = data.design_data;
+  }
+  if (data.expiration_date) {
+    insertData.expiration_date = data.expiration_date;
+  }
 
   const { data: insertedData, error } = await supabase.from('qr_codes').insert(insertData).select().single();
 
@@ -224,6 +241,12 @@ export async function updateQRCodeInSupabase(id: string, data: UpdateQRCodeData)
   }
   if (data.status !== undefined) {
     updateData.status = data.status;
+  }
+  if (data.design_data !== undefined) {
+    updateData.design_data = data.design_data;
+  }
+  if (data.expiration_date !== undefined) {
+    updateData.expiration_date = data.expiration_date;
   }
 
   const { data: updatedData, error } = await supabase

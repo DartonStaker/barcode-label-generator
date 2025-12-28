@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import QRCodeCard from './QRCodeCard';
 import QRCodeFilters, { QRCodeFilters as QRCodeFiltersType } from './QRCodeFilters';
-import QRCodeFormModal from './QRCodeFormModal';
+import QRCodeWizard from './QRCodeWizard';
 import {
   getQRCodesFromSupabase,
   createQRCodeInSupabase,
   updateQRCodeInSupabase,
   deleteQRCodeFromSupabase,
 } from '@/lib/supabase/qrCodes';
-import { QRCode, QRCodeType, QRCodeStatus } from '@/lib/qrCode';
+import { QRCode, QRCodeType, QRCodeStatus, QRCodeDesign } from '@/lib/qrCode';
 
 export default function QRCodeDashboard() {
   const [qrCodes, setQrCodes] = useState<QRCode[]>([]);
@@ -52,7 +52,14 @@ export default function QRCodeDashboard() {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (data: { title: string; type: QRCodeType; status: QRCodeStatus; payload: string }) => {
+  const handleSave = async (data: {
+    title: string;
+    type: QRCodeType;
+    status: QRCodeStatus;
+    payload: string;
+    design_data?: QRCodeDesign;
+    expiration_date?: string | null;
+  }) => {
     try {
       if (editingQRCode) {
         await updateQRCodeInSupabase(editingQRCode.id, data);
@@ -173,7 +180,7 @@ export default function QRCodeDashboard() {
         </div>
       )}
 
-      <QRCodeFormModal
+      <QRCodeWizard
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);

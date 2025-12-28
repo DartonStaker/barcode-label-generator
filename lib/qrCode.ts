@@ -1,5 +1,37 @@
-export type QRCodeType = 'url' | 'discount' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'vcard';
+export type QRCodeType =
+  | 'url'
+  | 'discount'
+  | 'text'
+  | 'wifi'
+  | 'email'
+  | 'phone'
+  | 'sms'
+  | 'vcard'
+  | 'whatsapp'
+  | 'pdf'
+  | 'app'
+  | 'images'
+  | 'video'
+  | 'social_media'
+  | 'event'
+  | '2d_barcode';
+
 export type QRCodeStatus = 'active' | 'inactive' | 'archived';
+
+export type QRCodeFrameStyle = 'none' | 'rounded' | 'circular' | 'scan_me' | 'scan_me_simple' | 'scan_me_qr' | 'scan_me_menu';
+export type QRCodeShape = 'square' | 'rounded' | 'dots' | 'extra_rounded';
+export type QRCodeLogoType = 'none' | 'upload' | 'link' | 'location' | 'email' | 'whatsapp' | 'wifi' | 'contact' | 'paypal' | 'bitcoin' | 'scan_me' | 'scan_me_text' | 'scan_me_icon';
+
+export interface QRCodeDesign {
+  frameStyle: QRCodeFrameStyle;
+  shape: QRCodeShape;
+  logoType: QRCodeLogoType;
+  logoUrl?: string;
+  logoSize?: number;
+  foregroundColor: string;
+  backgroundColor: string;
+  errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+}
 
 export interface QRCode {
   id: string;
@@ -9,6 +41,8 @@ export interface QRCode {
   payload: string;
   short_url: string;
   scans: number;
+  design_data?: QRCodeDesign | null;
+  expiration_date?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,7 +76,8 @@ export function formatQRPayload(type: QRCodeType, payload: string): string {
       }
       return payload;
     case 'discount':
-      // Discount codes are typically plain text
+    case '2d_barcode':
+      // Discount codes and 2D barcodes are typically plain text
       return payload.trim();
     case 'text':
       return payload;
@@ -67,8 +102,37 @@ export function formatQRPayload(type: QRCodeType, payload: string): string {
         return `sms:${payload}`;
       }
       return payload;
+    case 'whatsapp':
+      // WhatsApp format: https://wa.me/1234567890?text=Message
+      if (!payload.startsWith('https://wa.me/') && !payload.startsWith('wa.me/')) {
+        return `https://wa.me/${payload.replace(/^\+/, '')}`;
+      }
+      if (payload.startsWith('wa.me/')) {
+        return `https://${payload}`;
+      }
+      return payload;
     case 'vcard':
       // vCard format (already formatted)
+      return payload;
+    case 'pdf':
+    case 'images':
+    case 'video':
+      // Media files - should be URLs
+      if (!payload.match(/^https?:\/\//i)) {
+        return `https://${payload}`;
+      }
+      return payload;
+    case 'app':
+      // App deep links
+      return payload;
+    case 'social_media':
+      // Social media URLs
+      if (!payload.match(/^https?:\/\//i)) {
+        return `https://${payload}`;
+      }
+      return payload;
+    case 'event':
+      // Event data (could be various formats)
       return payload;
     default:
       return payload;
@@ -133,17 +197,34 @@ export function validateQRPayload(
  */
 export function getQRCodeTypeLabel(type: QRCodeType): string {
   const labels: Record<QRCodeType, string> = {
-    url: 'URL',
-    discount: 'Discount',
+    url: 'Link',
+    discount: 'Discount Code',
     text: 'Text',
     wifi: 'Wi-Fi',
-    email: 'Email',
-    phone: 'Phone',
+    email: 'E-mail',
+    phone: 'Call',
     sms: 'SMS',
-    vcard: 'vCard',
+    vcard: 'V-card',
+    whatsapp: 'WhatsApp',
+    pdf: 'PDF',
+    app: 'App',
+    images: 'Images',
+    video: 'Video',
+    social_media: 'Social Media',
+    event: 'Event',
+    '2d_barcode': '2D Barcode',
   };
   return labels[type] || type;
 }
+
+export const DEFAULT_QR_DESIGN: QRCodeDesign = {
+  frameStyle: 'none',
+  shape: 'square',
+  logoType: 'none',
+  foregroundColor: '#000000',
+  backgroundColor: '#FFFFFF',
+  errorCorrectionLevel: 'M',
+};
 
 /**
  * Get display label for QR code status
