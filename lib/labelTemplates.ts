@@ -207,13 +207,13 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     horizontalPitch: 1.5039370079, // 3.82 cm
     verticalPitch: 0.8346456693, // 2.12 cm
     columnOffsets: [
-      -0.196850394, // -5 mm for column 1
-      -0.157480315, // -4 mm for column 2 (additional -2 mm)
-      0.0393700787, // +1 mm for column 3
-      0.157480315, // +4 mm for column 4
-      0.236220472, // +6 mm for column 5
+      -0.2125984252, // Column 1 adjustment (-5.4 mm)
+      0.1181102362, // Column 2 adjustment (+3 mm)
+      -0.0787401575, // Column 3 adjustment (-2 mm)
+      -0.0787401575, // Column 4 adjustment (-2 mm)
+      -0.0393700787, // Column 5 adjustment (-1 mm)
     ],
-    rowOffset: 0.0551181102, // +1.4 mm vertical adjustment
+    rowOffset: -0.0157480315, // -0.4 mm vertical adjustment
   },
   {
     id: 'custom',
