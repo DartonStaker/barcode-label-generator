@@ -791,7 +791,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               padding: 0 !important;
             }
             @page {
-              size: A4 !important;
+              size: ${selectedTemplate.pageWidth}in ${selectedTemplate.pageHeight}in !important;
               margin: 0 !important;
               padding: 0 !important;
               marks: none !important;
@@ -1961,8 +1961,8 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                       margin: 0 !important;
                       padding: 0 !important;
                     }
-                    @page {
-                      size: A4 !important;
+                  @page {
+                    size: ${selectedTemplate.pageWidth}in ${selectedTemplate.pageHeight}in !important;
                       margin: 0 !important;
                       padding: 0 !important;
                       marks: none !important;
