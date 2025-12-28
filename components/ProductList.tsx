@@ -211,61 +211,62 @@ export default function ProductList({ products, initialTemplateId, encodingType,
       const background: LabelImage[] = [];
       const foreground: LabelImage[] = [];
 
-      let target: LabelImage | null = null;
+      let target: LabelImage | undefined;
       let targetLayer: LabelImageLayer = DEFAULT_IMAGE_LAYER;
       let targetIndex = -1;
 
       images.forEach((image) => {
         const layer = getImageLayer(image);
+        const layerArray = layer === 'background' ? background : foreground;
         const clone: LabelImage = { ...image, layer };
 
         if (clone.id === imageId) {
           target = clone;
           targetLayer = layer;
-          const layerArray = layer === 'background' ? background : foreground;
           targetIndex = layerArray.length;
           return;
         }
 
-        if (layer === 'background') {
-          background.push(clone);
-        } else {
-          foreground.push(clone);
-        }
+        layerArray.push(clone);
       });
 
       if (!target) {
-        return images;
+        return normalizeZIndex([...background, ...foreground]);
       }
+
+      let activeTarget: LabelImage = target;
 
       const getLayerArray = (layer: LabelImageLayer) => (layer === 'background' ? background : foreground);
 
+      const placeTarget = (layer: LabelImageLayer, desiredIndex: number) => {
+        const layerArray = getLayerArray(layer);
+        const boundedIndex = Math.max(0, Math.min(desiredIndex, layerArray.length));
+        activeTarget = { ...activeTarget, layer };
+        layerArray.splice(boundedIndex, 0, activeTarget);
+        targetLayer = layer;
+        targetIndex = boundedIndex;
+      };
+
       switch (direction) {
         case 'front': {
-          target.layer = 'foreground';
-          getLayerArray('foreground').push(target);
+          placeTarget('foreground', getLayerArray('foreground').length);
           break;
         }
         case 'back': {
-          target.layer = 'background';
-          getLayerArray('background').unshift(target);
+          placeTarget('background', 0);
           break;
         }
         case 'forward': {
-          const layerArray = getLayerArray(targetLayer);
-          const insertIndex = Math.min(targetIndex + 1, layerArray.length);
-          layerArray.splice(insertIndex, 0, target);
+          placeTarget(targetLayer, Math.min(targetIndex + 1, getLayerArray(targetLayer).length));
           break;
         }
         case 'backward': {
-          const layerArray = getLayerArray(targetLayer);
-          const insertIndex = Math.max(targetIndex - 1, 0);
-          layerArray.splice(insertIndex, 0, target);
+          placeTarget(targetLayer, Math.max(targetIndex - 1, 0));
           break;
         }
         default: {
-          const layerArray = getLayerArray(targetLayer);
-          layerArray.splice(targetIndex, 0, target);
+          const defaultIndex = targetIndex < 0 ? getLayerArray(targetLayer).length : targetIndex;
+          placeTarget(targetLayer, defaultIndex);
         }
       }
 
