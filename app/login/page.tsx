@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppBrand from '@/components/AppBrand';
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
@@ -94,6 +94,30 @@ export default function LoginPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+function LoginFormFallback() {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 animate-pulse">
+        <AppBrand align="center" className="mb-6" />
+        <div className="space-y-4">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mx-auto" />
+          <div className="h-10 bg-gray-200 rounded" />
+          <div className="h-10 bg-gray-200 rounded" />
+          <div className="h-10 bg-gray-200 rounded" />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormFallback />}>
+      <LoginFormContent />
+    </Suspense>
   );
 }
 
