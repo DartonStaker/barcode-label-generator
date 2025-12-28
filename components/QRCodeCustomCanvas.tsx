@@ -35,6 +35,7 @@ export default function QRCodeCustomCanvas({
     errorCorrectionLevel,
     isRound = false,
     frameStyle,
+    frameText = 'SCAN ME',
   } = finalDesign;
 
   useEffect(() => {
@@ -52,11 +53,17 @@ export default function QRCodeCustomCanvas({
       
       const modules = qrData.modules;
       const moduleCount = modules.size;
-      const moduleSize = size / moduleCount;
+      // Adjust size for round QR codes
+      const actualSize = isRound ? size * 0.76 : size;
+      const moduleSize = actualSize / moduleCount;
+
+      // Set canvas size
+      canvas.width = actualSize;
+      canvas.height = actualSize;
 
       // Clear and fill background
       ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, size, size);
+      ctx.fillRect(0, 0, actualSize, actualSize);
 
       // Draw modules with custom shapes
       for (let rowIndex = 0; rowIndex < moduleCount; rowIndex++) {
@@ -87,10 +94,36 @@ export default function QRCodeCustomCanvas({
         }
       }
 
-      // Apply round mask if needed
+      // Apply round mask if needed - create circular QR with rounded outer space
       if (isRound && containerRef.current) {
+        // Create a circular container with padding for rounded outer space
+        containerRef.current.style.width = `${size}px`;
+        containerRef.current.style.height = `${size}px`;
         containerRef.current.style.borderRadius = '50%';
         containerRef.current.style.overflow = 'hidden';
+        containerRef.current.style.padding = '12%';
+        containerRef.current.style.backgroundColor = backgroundColor;
+        containerRef.current.style.display = 'flex';
+        containerRef.current.style.alignItems = 'center';
+        containerRef.current.style.justifyContent = 'center';
+        // Make the canvas itself circular and smaller to fit within padding
+        if (canvasRef.current) {
+          const canvasSize = size * 0.76; // 76% of original size to account for 12% padding on each side
+          canvasRef.current.style.width = `${canvasSize}px`;
+          canvasRef.current.style.height = `${canvasSize}px`;
+          canvasRef.current.style.borderRadius = '50%';
+        }
+      } else if (containerRef.current) {
+        containerRef.current.style.padding = '';
+        containerRef.current.style.borderRadius = '';
+        containerRef.current.style.display = '';
+        containerRef.current.style.alignItems = '';
+        containerRef.current.style.justifyContent = '';
+        if (canvasRef.current) {
+          canvasRef.current.style.width = '';
+          canvasRef.current.style.height = '';
+          canvasRef.current.style.borderRadius = '';
+        }
       }
 
       // Apply border style
@@ -312,10 +345,14 @@ export default function QRCodeCustomCanvas({
     const centerX = x + size / 2;
     const centerY = y + size / 2;
     const radius = size / 2.5;
+    // Use a seed-based approach for consistent organic shapes
+    const seed = Math.floor(x / size) + Math.floor(y / size);
     ctx.beginPath();
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2;
-      const r = radius + (Math.random() * radius * 0.3);
+      // Use seed for pseudo-random but consistent variation
+      const random = ((seed * 7 + i * 11) % 100) / 100;
+      const r = radius + (random * radius * 0.3);
       const px = centerX + Math.cos(angle) * r;
       const py = centerY + Math.sin(angle) * r;
       if (i === 0) ctx.moveTo(px, py);
@@ -334,11 +371,13 @@ export default function QRCodeCustomCanvas({
     ctx.lineTo(x + padding, y + size - padding);
     ctx.lineTo(x + padding * 0.5, y + size / 2);
     ctx.closePath();
+    ctx.fill();
   };
 
   const drawClassyRoundedShape = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     const padding = size * 0.15;
     roundRect(ctx, x + padding, y + padding, size - padding * 2, size - padding * 2, size * 0.15);
+    ctx.fill();
   };
 
   const drawSmoothShape = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
@@ -348,6 +387,7 @@ export default function QRCodeCustomCanvas({
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.closePath();
+    ctx.fill();
   };
 
   const getLogoSource = () => {
@@ -380,8 +420,8 @@ export default function QRCodeCustomCanvas({
         height={size}
         style={{
           display: 'block',
-          width: '100%',
-          height: '100%',
+          width: isRound ? '76%' : '100%',
+          height: isRound ? '76%' : '100%',
         }}
       />
       {logoSource && (
@@ -409,7 +449,7 @@ export default function QRCodeCustomCanvas({
             ...getFrameTextPosition(frameStyle, size),
           }}
         >
-          SCAN ME
+          {frameText}
         </div>
       )}
     </div>
@@ -419,17 +459,47 @@ export default function QRCodeCustomCanvas({
 function getFrameTextPosition(frameStyle: string, size: number): Record<string, string> {
   switch (frameStyle) {
     case 'scan_me_top':
-      return { top: '-25px', left: '50%', transform: 'translateX(-50%)' };
+      return { top: '-30px', left: '50%', transform: 'translateX(-50%)' };
     case 'scan_me_bottom':
-      return { bottom: '-25px', left: '50%', transform: 'translateX(-50%)' };
+      return { bottom: '-30px', left: '50%', transform: 'translateX(-50%)' };
     case 'scan_me_banner_top':
-      return { top: '-30px', left: '50%', transform: 'translateX(-50%)', borderRadius: '4px 4px 0 0' };
+      return { 
+        top: '-35px', 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        borderRadius: '6px 6px 0 0',
+        padding: '4px 12px',
+        borderBottom: 'none',
+      };
     case 'scan_me_banner_bottom':
-      return { bottom: '-30px', left: '50%', transform: 'translateX(-50%)', borderRadius: '0 0 4px 4px' };
+      return { 
+        bottom: '-35px', 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        borderRadius: '0 0 6px 6px',
+        padding: '4px 12px',
+        borderTop: 'none',
+      };
     case 'scan_me_thick_top':
-      return { top: '0', left: '50%', transform: 'translateX(-50%)', width: '100%', borderRadius: '0' };
+      return { 
+        top: '0', 
+        left: '0', 
+        right: '0',
+        width: '100%', 
+        borderRadius: '0',
+        textAlign: 'center',
+        padding: '6px',
+      };
     case 'scan_me_thick_bottom':
-      return { bottom: '0', left: '50%', transform: 'translateX(-50%)', width: '100%', borderRadius: '0' };
+      return { 
+        bottom: '0', 
+        left: '0',
+        right: '0',
+        width: '100%', 
+        borderRadius: '0',
+        textAlign: 'center',
+        padding: '6px',
+      };
     default:
       return { top: '0', right: '0', transform: 'translate(4px, -4px)' };
   }

@@ -180,6 +180,20 @@ export default function QRCodeStep2({ design, onDesignChange, qrValue }: Step2De
               ))}
             </div>
 
+            {design.frameStyle !== 'none' && (
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Frame Text</label>
+                <input
+                  type="text"
+                  value={design.frameText || 'SCAN ME'}
+                  onChange={(e) => handleDesignUpdate({ frameText: e.target.value })}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="SCAN ME"
+                />
+                <p className="mt-1 text-xs text-gray-500">Customize the text displayed on the frame</p>
+              </div>
+            )}
+
             <div className="mt-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Foreground Color</label>

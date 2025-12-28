@@ -27,6 +27,7 @@ export type QRCodeLogoType = 'none' | 'upload' | 'link' | 'location' | 'email' |
 
 export interface QRCodeDesign {
   frameStyle: QRCodeFrameStyle;
+  frameText?: string; // Custom text for frame (defaults to "SCAN ME")
   moduleShape: QRCodeModuleShape;
   cornerStyle: QRCodeCornerStyle;
   centerStyle: QRCodeCenterStyle;
