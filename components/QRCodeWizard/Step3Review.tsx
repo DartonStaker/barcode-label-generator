@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import QRCodeEnhanced from '../QRCodeEnhanced';
+import QRCodeAdvanced from '../QRCodeAdvanced';
 import { QRCodeDesign, getQRCodeTypeLabel } from '@/lib/qrCode';
 
 interface Step3ReviewProps {
@@ -94,9 +94,23 @@ export default function QRCodeStep3({
                 <span className="text-gray-600 capitalize">{design.frameStyle.replace(/_/g, ' ')}</span>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Shape:</span>{' '}
-                <span className="text-gray-600 capitalize">{design.shape.replace(/_/g, ' ')}</span>
+                <span className="font-medium text-gray-700">Module Shape:</span>{' '}
+                <span className="text-gray-600 capitalize">{design.moduleShape.replace(/_/g, ' ')}</span>
               </div>
+              <div>
+                <span className="font-medium text-gray-700">Corner Style:</span>{' '}
+                <span className="text-gray-600 capitalize">{design.cornerStyle.replace(/-/g, ' ')}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Border Style:</span>{' '}
+                <span className="text-gray-600 capitalize">{design.borderStyle.replace(/_/g, ' ')}</span>
+              </div>
+              {design.isRound && (
+                <div>
+                  <span className="font-medium text-gray-700">Round QR:</span>{' '}
+                  <span className="text-gray-600">Yes</span>
+                </div>
+              )}
               <div>
                 <span className="font-medium text-gray-700">Logo:</span>{' '}
                 <span className="text-gray-600 capitalize">{design.logoType.replace(/_/g, ' ')}</span>
@@ -124,7 +138,7 @@ export default function QRCodeStep3({
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
         <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300 flex flex-col items-center">
           <div data-qr-code className="mb-4">
-            <QRCodeEnhanced value={payload} size={240} design={design} />
+            <QRCodeAdvanced value={payload} size={240} design={design} />
           </div>
 
           <div className="w-full space-y-3 text-sm">

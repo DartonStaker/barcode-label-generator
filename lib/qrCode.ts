@@ -19,18 +19,24 @@ export type QRCodeType =
 export type QRCodeStatus = 'active' | 'inactive' | 'archived';
 
 export type QRCodeFrameStyle = 'none' | 'rounded' | 'circular' | 'scan_me' | 'scan_me_simple' | 'scan_me_qr' | 'scan_me_menu';
-export type QRCodeShape = 'square' | 'rounded' | 'dots' | 'extra_rounded';
+export type QRCodeModuleShape = 'square' | 'rounded' | 'dots' | 'extra_rounded' | 'organic' | 'classy' | 'classy-rounded' | 'smooth';
+export type QRCodeCornerStyle = 'square' | 'rounded' | 'extra-rounded' | 'dot' | 'star' | 'circle' | 'diamond' | 'plus';
+export type QRCodeBorderStyle = 'none' | 'square' | 'rounded' | 'star' | 'circle' | 'diamond';
 export type QRCodeLogoType = 'none' | 'upload' | 'link' | 'location' | 'email' | 'whatsapp' | 'wifi' | 'contact' | 'paypal' | 'bitcoin' | 'scan_me' | 'scan_me_text' | 'scan_me_icon';
 
 export interface QRCodeDesign {
   frameStyle: QRCodeFrameStyle;
-  shape: QRCodeShape;
+  moduleShape: QRCodeModuleShape;
+  cornerStyle: QRCodeCornerStyle;
+  borderStyle: QRCodeBorderStyle;
   logoType: QRCodeLogoType;
   logoUrl?: string;
   logoSize?: number;
   foregroundColor: string;
   backgroundColor: string;
+  borderColor?: string;
   errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+  isRound?: boolean; // For circular QR codes with rounded outer space
 }
 
 export interface QRCode {
@@ -219,11 +225,15 @@ export function getQRCodeTypeLabel(type: QRCodeType): string {
 
 export const DEFAULT_QR_DESIGN: QRCodeDesign = {
   frameStyle: 'none',
-  shape: 'square',
+  moduleShape: 'square',
+  cornerStyle: 'square',
+  borderStyle: 'none',
   logoType: 'none',
   foregroundColor: '#000000',
   backgroundColor: '#FFFFFF',
+  borderColor: '#000000',
   errorCorrectionLevel: 'M',
+  isRound: false,
 };
 
 /**

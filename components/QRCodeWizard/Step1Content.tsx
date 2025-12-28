@@ -1,7 +1,7 @@
 'use client';
 
 import { QRCodeType as QRCodeTypeEnum, getQRCodeTypeLabel, formatQRPayload, DEFAULT_QR_DESIGN } from '@/lib/qrCode';
-import QRCodeEnhanced from '../QRCodeEnhanced';
+import QRCodeAdvanced from '../QRCodeAdvanced';
 
 interface Step1ContentProps {
   title: string;
@@ -207,7 +207,7 @@ export default function QRCodeStep1({
           {payload ? (
             <>
               <div className="mb-4">
-                <QRCodeEnhanced
+                <QRCodeAdvanced
                   value={formatQRPayload(type, payload)}
                   size={192}
                   design={DEFAULT_QR_DESIGN}

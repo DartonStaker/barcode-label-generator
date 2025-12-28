@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import QRCodeEnhanced from '../QRCodeEnhanced';
-import { QRCodeDesign, QRCodeFrameStyle, QRCodeShape, QRCodeLogoType } from '@/lib/qrCode';
+import QRCodeAdvanced from '../QRCodeAdvanced';
+import { QRCodeDesign, QRCodeFrameStyle, QRCodeModuleShape, QRCodeCornerStyle, QRCodeBorderStyle, QRCodeLogoType } from '@/lib/qrCode';
 
 interface Step2DesignProps {
   design: QRCodeDesign;
@@ -22,11 +22,35 @@ const FRAME_STYLES: { value: QRCodeFrameStyle; label: string; icon: string }[] =
   { value: 'scan_me_menu', label: 'Scan Me Menu', icon: '📱' },
 ];
 
-const SHAPES: { value: QRCodeShape; label: string }[] = [
-  { value: 'square', label: 'Square' },
-  { value: 'rounded', label: 'Rounded' },
-  { value: 'dots', label: 'Dots' },
-  { value: 'extra_rounded', label: 'Extra Rounded' },
+const MODULE_SHAPES: { value: QRCodeModuleShape; label: string; icon: string }[] = [
+  { value: 'square', label: 'Square', icon: '▢' },
+  { value: 'rounded', label: 'Rounded', icon: '▢' },
+  { value: 'dots', label: 'Dots', icon: '●' },
+  { value: 'extra_rounded', label: 'Extra Rounded', icon: '▢' },
+  { value: 'organic', label: 'Organic', icon: '○' },
+  { value: 'classy', label: 'Classy', icon: '▢' },
+  { value: 'classy-rounded', label: 'Classy Rounded', icon: '▢' },
+  { value: 'smooth', label: 'Smooth', icon: '○' },
+];
+
+const CORNER_STYLES: { value: QRCodeCornerStyle; label: string; icon: string }[] = [
+  { value: 'square', label: 'Square', icon: '▢' },
+  { value: 'rounded', label: 'Rounded', icon: '▢' },
+  { value: 'extra-rounded', label: 'Extra Rounded', icon: '▢' },
+  { value: 'dot', label: 'Dot', icon: '●' },
+  { value: 'star', label: 'Star', icon: '★' },
+  { value: 'circle', label: 'Circle', icon: '○' },
+  { value: 'diamond', label: 'Diamond', icon: '◆' },
+  { value: 'plus', label: 'Plus', icon: '+' },
+];
+
+const BORDER_STYLES: { value: QRCodeBorderStyle; label: string; icon: string }[] = [
+  { value: 'none', label: 'None', icon: '✕' },
+  { value: 'square', label: 'Square', icon: '▢' },
+  { value: 'rounded', label: 'Rounded', icon: '▢' },
+  { value: 'star', label: 'Star', icon: '★' },
+  { value: 'circle', label: 'Circle', icon: '○' },
+  { value: 'diamond', label: 'Diamond', icon: '◆' },
 ];
 
 const LOGO_TYPES: { value: QRCodeLogoType; label: string; icon: string }[] = [
@@ -184,26 +208,102 @@ export default function QRCodeStep2({ design, onDesignChange, qrValue }: Step2De
 
         {/* Shape Tab */}
         {activeTab === 'shape' && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-4">Shape</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {SHAPES.map((shape) => (
-                <button
-                  key={shape.value}
-                  type="button"
-                  onClick={() => handleDesignUpdate({ shape: shape.value })}
-                  className={`p-4 border-2 rounded-lg text-center transition-all ${
-                    design.shape === shape.value
-                      ? 'border-purple-600 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="text-sm font-medium">{shape.label}</div>
-                </button>
-              ))}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-4">Module Shape</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {MODULE_SHAPES.map((shape) => (
+                  <button
+                    key={shape.value}
+                    type="button"
+                    onClick={() => handleDesignUpdate({ moduleShape: shape.value })}
+                    className={`p-3 border-2 rounded-lg text-center transition-all ${
+                      design.moduleShape === shape.value
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{shape.icon}</div>
+                    <div className="text-xs font-medium">{shape.label}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="mt-6">
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-4">Corner Style</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {CORNER_STYLES.map((corner) => (
+                  <button
+                    key={corner.value}
+                    type="button"
+                    onClick={() => handleDesignUpdate({ cornerStyle: corner.value })}
+                    className={`p-3 border-2 rounded-lg text-center transition-all ${
+                      design.cornerStyle === corner.value
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{corner.icon}</div>
+                    <div className="text-xs font-medium">{corner.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-4">Border Style</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {BORDER_STYLES.map((border) => (
+                  <button
+                    key={border.value}
+                    type="button"
+                    onClick={() => handleDesignUpdate({ borderStyle: border.value })}
+                    className={`p-3 border-2 rounded-lg text-center transition-all ${
+                      design.borderStyle === border.value
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{border.icon}</div>
+                    <div className="text-xs font-medium">{border.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Border Color</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={design.borderColor || '#000000'}
+                  onChange={(e) => handleDesignUpdate({ borderColor: e.target.value })}
+                  className="w-12 h-12 border border-gray-300 rounded cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={design.borderColor || '#000000'}
+                  onChange={(e) => handleDesignUpdate({ borderColor: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={design.isRound || false}
+                  onChange={(e) => handleDesignUpdate({ isRound: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Round QR Code (with rounded outer space)</span>
+              </label>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Error Correction Level</label>
               <select
                 value={design.errorCorrectionLevel}
@@ -278,7 +378,7 @@ export default function QRCodeStep2({ design, onDesignChange, qrValue }: Step2De
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
         <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300 flex flex-col items-center">
           {qrValue ? (
-            <QRCodeEnhanced value={qrValue} size={240} design={design} />
+            <QRCodeAdvanced value={qrValue} size={240} design={design} />
           ) : (
             <div className="text-center text-gray-400 py-12">
               <p>Complete Step 1 to see preview</p>

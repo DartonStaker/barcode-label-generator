@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import QRCode from './QRCode';
-import { QRCode as QRCodeType, formatRelativeTime, getQRCodeTypeLabel, getQRCodeStatusLabel } from '@/lib/qrCode';
+import QRCodeAdvanced from './QRCodeAdvanced';
+import { QRCode as QRCodeType, formatRelativeTime, getQRCodeTypeLabel, getQRCodeStatusLabel, DEFAULT_QR_DESIGN } from '@/lib/qrCode';
 
 interface QRCodeCardProps {
   qrCode: QRCodeType;
@@ -138,7 +138,11 @@ export default function QRCodeCard({ qrCode, onEdit, onDelete, onDuplicate, base
       </div>
 
       <div className="flex justify-center mb-4">
-        <QRCode value={qrCode.payload} size={180} fgColor="#9333ea" />
+        <QRCodeAdvanced
+          value={qrCode.payload}
+          size={180}
+          design={qrCode.design_data || DEFAULT_QR_DESIGN}
+        />
       </div>
 
       <div className="space-y-2 text-sm">
