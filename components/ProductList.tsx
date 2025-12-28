@@ -863,7 +863,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               margin: 0 !important;
               padding: 0 !important;
               box-sizing: border-box !important;
-              page-break-after: always !important;
+              page-break-after: auto !important;
               page-break-inside: avoid !important;
               position: relative !important;
               overflow: hidden !important;
@@ -873,8 +873,8 @@ export default function ProductList({ products, initialTemplateId, encodingType,
               bottom: auto !important;
               transform: none !important;
             }
-            .label-page[data-is-last="true"] {
-              page-break-after: auto !important;
+            .label-page[data-is-last="false"] {
+              page-break-after: always !important;
             }
             .label-cell {
               position: absolute !important;
@@ -2022,7 +2022,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                       margin: 0 !important;
                       padding: 0 !important;
                       box-sizing: border-box !important;
-                      page-break-after: always !important;
+                      page-break-after: auto !important;
                       page-break-inside: avoid !important;
                       position: relative !important;
                       overflow: hidden !important;
@@ -2033,8 +2033,8 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                       transform: none !important;
                       border: none !important;
                     }
-                    .label-page[data-is-last="true"] {
-                      page-break-after: auto !important;
+                    .label-page[data-is-last="false"] {
+                      page-break-after: always !important;
                     }
                     .label-cell {
                       position: absolute !important;

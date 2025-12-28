@@ -121,7 +121,6 @@ export default function LabelGrid({
             width: `${pageWidthPx}px`,
             height: `${pageHeightPx}px`,
             position: 'relative',
-            pageBreakAfter: pageIndex === pagesToShow.length - 1 ? 'auto' : 'always',
             backgroundColor: 'white',
             margin: '0 auto',
             marginBottom: '20px',
