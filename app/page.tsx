@@ -9,7 +9,7 @@ import { saveProductsToSupabase, getProductsFromSupabase } from '@/lib/supabase/
 import AppBrand from '@/components/AppBrand';
 import { ENCODING_OPTIONS, EncodingType } from '@/lib/encodingOptions';
 
-type ViewMode = 'menu' | 'encoding' | 'custom' | 'default';
+type ViewMode = 'menu' | 'encoding' | 'custom' | 'default' | 'qr';
 
 export default function Home() {
   const router = useRouter();
@@ -197,7 +197,7 @@ export default function Home() {
               Choose how you want to create your barcode labels
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               {/* Option 1: Custom Barcode Creation */}
               <button
                 onClick={() => {
@@ -249,6 +249,105 @@ export default function Home() {
                   Get Started →
                 </div>
               </button>
+
+              {/* Option 3: QR Code Generator */}
+              <button
+                onClick={() => {
+                  setViewMode('qr');
+                  setEncodingType(null);
+                  setPendingViewMode(null);
+                }}
+                className="group relative p-8 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-lg text-left"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:bg-purple-700 transition-colors">
+                    3
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      QR Code Generator
+                    </h2>
+                    <p className="text-gray-600 text-sm">
+                      Create printable QR codes for product packaging, store signage, and marketing campaigns. Configure content, styling, and export options.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 text-purple-600 font-medium text-sm group-hover:text-purple-700">
+                  Explore QR Tools →
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (viewMode === 'qr') {
+    return (
+      <main className="min-h-screen p-8 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
+              <AppBrand />
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleBackToMenu}
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Back to Menu
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 mb-4">
+              Labs Preview
+            </span>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">QR Code Generator</h2>
+            <p className="text-gray-600 mb-6 max-w-2xl">
+              We&apos;re building a dedicated workspace for designing QR code label sheets. Choose QR payload types, batch-generate codes, and export layouts that align with your existing label stock.
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-dashed border-purple-200 bg-purple-50 p-5">
+                <h3 className="text-lg font-semibold text-purple-700 mb-2">What&apos;s coming</h3>
+                <ul className="list-disc list-inside text-sm text-purple-700 space-y-1">
+                  <li>Support for product URLs, deep links, Wi-Fi credentials, and plain text.</li>
+                  <li>Batch import CSV or Excel files to generate QR sets.</li>
+                  <li>Live preview with sizing and error-correction controls.</li>
+                </ul>
+              </div>
+              <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-5">
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">How you can prepare</h3>
+                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                  <li>Organize destination links or payload data in a spreadsheet.</li>
+                  <li>Confirm which label stock you’ll use so we can mirror the layout.</li>
+                  <li>Share any branding requirements (colors, logos) with the team.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                disabled
+              >
+                Start Building (Coming Soon)
+              </button>
+              <span className="text-sm text-gray-500">
+                Need specific QR features? <a href="mailto:hello@apparely.co.za" className="text-purple-600 hover:text-purple-700 underline">Let us know</a>.
+              </span>
             </div>
           </div>
         </div>
