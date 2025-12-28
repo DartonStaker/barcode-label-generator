@@ -17,6 +17,7 @@ export interface LabelTemplate {
   horizontalPitch?: number; // distance from left edge of one label to next (in inches)
   verticalPitch?: number; // distance from top edge of one label to next (in inches)
   columnOffsets?: number[]; // optional per-column horizontal adjustments in inches
+  rowOffset?: number; // optional constant vertical adjustment applied to each row in inches
 }
 
 export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
@@ -208,10 +209,11 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     columnOffsets: [
       -0.196850394, // -5 mm for column 1
       -0.0787401575, // -2 mm for column 2
-      0,
-      0.0787401575, // +2 mm for column 4
+      0.0393700787, // +1 mm for column 3
+      0.157480315, // +4 mm for column 4
       0.236220472, // +6 mm for column 5
     ],
+    rowOffset: 0.0551181102, // +1.4 mm vertical adjustment
   },
   {
     id: 'custom',
@@ -319,7 +321,7 @@ export function getLabelPosition(
     
     let left = offsetX + (col * template.horizontalPitch * scaleX);
     // Calculate top position: row 0 at the physical top margin, rows increase downward
-    const top = offsetY + (row * template.verticalPitch * scaleY);
+    let top = offsetY + (row * template.verticalPitch * scaleY);
     
     // Apply scale to label dimensions
     const scaledWidth = template.labelWidth * scaleX;
@@ -327,6 +329,9 @@ export function getLabelPosition(
     
     if (template.columnOffsets && typeof template.columnOffsets[col] === 'number') {
       left += template.columnOffsets[col] * scaleX;
+    }
+    if (typeof template.rowOffset === 'number') {
+      top += template.rowOffset * scaleY;
     }
 
     return {
@@ -367,7 +372,10 @@ export function getLabelPosition(
   if (template.columnOffsets && typeof template.columnOffsets[col] === 'number') {
     left += template.columnOffsets[col];
   }
-  const top = template.marginTop + (row * (labelHeight + spacingY));
+  let top = template.marginTop + (row * (labelHeight + spacingY));
+  if (typeof template.rowOffset === 'number') {
+    top += template.rowOffset;
+  }
   
   // Ensure positions don't exceed page boundaries
   const maxWidth = template.pageWidth - left - template.marginRight;
