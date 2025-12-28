@@ -16,6 +16,7 @@ export interface LabelTemplate {
   gapVertical: number; // gap between labels vertically in inches
   horizontalPitch?: number; // distance from left edge of one label to next (in inches)
   verticalPitch?: number; // distance from top edge of one label to next (in inches)
+  columnOffsets?: number[]; // optional per-column horizontal adjustments in inches
 }
 
 export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
@@ -204,6 +205,13 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     gapVertical: 0, // pitch equals height
     horizontalPitch: 1.5039370079, // 3.82 cm
     verticalPitch: 0.8346456693, // 2.12 cm
+    columnOffsets: [
+      -0.196850394, // -5 mm for column 1
+      -0.0787401575, // -2 mm for column 2
+      0,
+      0.0787401575, // +2 mm for column 4
+      0.236220472, // +6 mm for column 5
+    ],
   },
   {
     id: 'custom',
@@ -309,7 +317,7 @@ export function getLabelPosition(
       }
     }
     
-    const left = offsetX + (col * template.horizontalPitch * scaleX);
+    let left = offsetX + (col * template.horizontalPitch * scaleX);
     // Calculate top position: row 0 at the physical top margin, rows increase downward
     const top = offsetY + (row * template.verticalPitch * scaleY);
     
@@ -317,6 +325,10 @@ export function getLabelPosition(
     const scaledWidth = template.labelWidth * scaleX;
     const scaledHeight = template.labelHeight * scaleY;
     
+    if (template.columnOffsets && typeof template.columnOffsets[col] === 'number') {
+      left += template.columnOffsets[col] * scaleX;
+    }
+
     return {
       left: left,
       top: top,
@@ -351,7 +363,10 @@ export function getLabelPosition(
     ? (availableHeight - (labelHeight * template.rows)) / (template.rows - 1)
     : 0;
   
-  const left = template.marginLeft + (col * (labelWidth + spacingX));
+  let left = template.marginLeft + (col * (labelWidth + spacingX));
+  if (template.columnOffsets && typeof template.columnOffsets[col] === 'number') {
+    left += template.columnOffsets[col];
+  }
   const top = template.marginTop + (row * (labelHeight + spacingY));
   
   // Ensure positions don't exceed page boundaries
