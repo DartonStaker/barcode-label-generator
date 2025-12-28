@@ -9,13 +9,23 @@ type AppBrandProps = {
   align?: 'left' | 'center';
 };
 
-const PRIMARY_LOGO_SRC =
-  'https://kfshsanphhemwvlgmoyk.supabase.co/storage/v1/object/public/Images/Apparely-rec-logo.png';
-const FALLBACK_LOGO_SRC = '/apparely-logo.svg';
+const LOGO_SOURCES = [
+  'https://kfshsanphhemwvlgmoyk.supabase.co/storage/v1/object/public/Images/Apparely-rec-logo.png',
+  '/apparely-rec-logo.png',
+  '/apparely-logo.svg',
+];
 
 export default function AppBrand({ className = '', hideTagline = false, align = 'left' }: AppBrandProps) {
   const alignmentClasses = align === 'center' ? 'items-center text-center' : 'items-start text-left';
-  const [logoSrc, setLogoSrc] = useState(PRIMARY_LOGO_SRC);
+  const [logoIndex, setLogoIndex] = useState(0);
+  const logoSrc = LOGO_SOURCES[Math.min(logoIndex, LOGO_SOURCES.length - 1)];
+
+  const handleLogoError = () => {
+    setLogoIndex((currentIndex) => {
+      const nextIndex = currentIndex + 1;
+      return nextIndex < LOGO_SOURCES.length ? nextIndex : currentIndex;
+    });
+  };
 
   return (
     <div className={`flex flex-col gap-3 ${alignmentClasses} ${className}`}>
@@ -27,11 +37,7 @@ export default function AppBrand({ className = '', hideTagline = false, align = 
           priority
           sizes="(max-width: 640px) 14rem, 16rem"
           className="object-contain"
-          onError={() => {
-            if (logoSrc !== FALLBACK_LOGO_SRC) {
-              setLogoSrc(FALLBACK_LOGO_SRC);
-            }
-          }}
+          onError={handleLogoError}
         />
       </div>
       {!hideTagline && (

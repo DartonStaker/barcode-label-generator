@@ -5,7 +5,7 @@ import { Product } from '@/lib/excelParser';
 import LabelGrid from './LabelGrid';
 import { AVAILABLE_TEMPLATES, LabelTemplate as LabelTemplateConfig, getTemplateById, getLabelPosition, calculateLabelPositions } from '@/lib/labelTemplates';
 import { useReactToPrint } from 'react-to-print';
-import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
+import { LabelImage, LabelImageLayer, LabelImageUpdate } from '@/lib/labelMedia';
 import { ENCODING_OPTIONS, EncodingType } from '@/lib/encodingOptions';
 import { DEFAULT_FIELD_LAYOUT, FieldLayout, LabelFieldKey, FieldPlacement } from '@/lib/fieldLayout';
 import NextImage from 'next/image';
@@ -46,6 +46,7 @@ const saveCustomTemplates = (templates: LabelTemplateConfig[]): void => {
 };
 
 const MAX_IMAGES_PER_LABEL = 5;
+const DEFAULT_IMAGE_LAYER: LabelImageLayer = 'foreground';
 const SELECT_TEMPLATE_OPTION = 'select-template';
 
 const cloneFieldLayout = (layout: FieldLayout): FieldLayout =>
@@ -116,12 +117,39 @@ export default function ProductList({ products, initialTemplateId, encodingType,
     return `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }, []);
 
-  const normalizeZIndex = useCallback((images: LabelImage[]) => {
-    return images.map((image, index) => ({
-      ...image,
-      zIndex: index + 1,
-    }));
-  }, []);
+  const getImageLayer = useCallback(
+    (image: LabelImage): LabelImageLayer => image.layer ?? DEFAULT_IMAGE_LAYER,
+    []
+  );
+
+  const normalizeZIndex = useCallback(
+    (images: LabelImage[]) => {
+      const grouped: Record<LabelImageLayer, LabelImage[]> = {
+        background: [],
+        foreground: [],
+      };
+
+      images.forEach((image) => {
+        const layer = getImageLayer(image);
+        grouped[layer].push({ ...image, layer });
+      });
+
+      const normalized: LabelImage[] = [];
+
+      (['background', 'foreground'] as LabelImageLayer[]).forEach((layer) => {
+        grouped[layer].forEach((image, index) => {
+          normalized.push({
+            ...image,
+            layer,
+            zIndex: index + 1,
+          });
+        });
+      });
+
+      return normalized;
+    },
+    [getImageLayer]
+  );
 
   const getImagesForLabel = useCallback(
     (index: number): LabelImage[] => {
@@ -176,38 +204,74 @@ export default function ProductList({ products, initialTemplateId, encodingType,
 
   const reorderImagesArray = useCallback(
     (images: LabelImage[], imageId: string, direction: 'forward' | 'backward' | 'front' | 'back') => {
-      const mutable = images.slice();
-      const index = mutable.findIndex((image) => image.id === imageId);
-      if (index === -1) {
+      if (images.length === 0) {
         return images;
       }
 
-      const [target] = mutable.splice(index, 1);
+      const background: LabelImage[] = [];
+      const foreground: LabelImage[] = [];
+
+      let target: LabelImage | null = null;
+      let targetLayer: LabelImageLayer = DEFAULT_IMAGE_LAYER;
+      let targetIndex = -1;
+
+      images.forEach((image) => {
+        const layer = getImageLayer(image);
+        const clone: LabelImage = { ...image, layer };
+
+        if (clone.id === imageId) {
+          target = clone;
+          targetLayer = layer;
+          const layerArray = layer === 'background' ? background : foreground;
+          targetIndex = layerArray.length;
+          return;
+        }
+
+        if (layer === 'background') {
+          background.push(clone);
+        } else {
+          foreground.push(clone);
+        }
+      });
+
+      if (!target) {
+        return images;
+      }
+
+      const getLayerArray = (layer: LabelImageLayer) => (layer === 'background' ? background : foreground);
 
       switch (direction) {
-        case 'front':
-          mutable.push(target);
+        case 'front': {
+          target.layer = 'foreground';
+          getLayerArray('foreground').push(target);
           break;
-        case 'back':
-          mutable.unshift(target);
+        }
+        case 'back': {
+          target.layer = 'background';
+          getLayerArray('background').unshift(target);
           break;
+        }
         case 'forward': {
-          const nextIndex = Math.min(index + 1, mutable.length);
-          mutable.splice(nextIndex, 0, target);
+          const layerArray = getLayerArray(targetLayer);
+          const insertIndex = Math.min(targetIndex + 1, layerArray.length);
+          layerArray.splice(insertIndex, 0, target);
           break;
         }
         case 'backward': {
-          const prevIndex = Math.max(index - 1, 0);
-          mutable.splice(prevIndex, 0, target);
+          const layerArray = getLayerArray(targetLayer);
+          const insertIndex = Math.max(targetIndex - 1, 0);
+          layerArray.splice(insertIndex, 0, target);
           break;
         }
-        default:
-          mutable.splice(index, 0, target);
+        default: {
+          const layerArray = getLayerArray(targetLayer);
+          layerArray.splice(targetIndex, 0, target);
+        }
       }
 
-      return normalizeZIndex(mutable);
+      return normalizeZIndex([...background, ...foreground]);
     },
-    [normalizeZIndex]
+    [getImageLayer, normalizeZIndex]
   );
 
   const handleAddImages = useCallback(
@@ -260,6 +324,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
             height,
             rotation: 0,
             zIndex: 9999, // temporary, will normalize
+            layer: DEFAULT_IMAGE_LAYER,
           });
         } catch (error) {
           console.error('Failed to import image:', error);
@@ -400,6 +465,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
       x: clamp(target.x + 0.05, 0, 1 - target.width),
       y: clamp(target.y + 0.05, 0, 1 - target.height),
       zIndex: target.zIndex + 1,
+      layer: getImageLayer(target),
     };
 
     if (applyImagesToAll) {
@@ -415,6 +481,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
     applyImagesToAll,
     clamp,
     generateImageId,
+    getImageLayer,
     getImagesForLabel,
     setImagesForLabel,
     updateGlobalImages,
@@ -1660,6 +1727,21 @@ export default function ProductList({ products, initialTemplateId, encodingType,
 
               {selectedImage && (
                 <div className="grid gap-4 md:grid-cols-2">
+                  <div className="md:col-span-2 flex flex-wrap items-center justify-between text-xs text-gray-500">
+                    <span>
+                      Layer:{' '}
+                      <span className="font-semibold text-gray-700">
+                        {(selectedImage.layer ?? DEFAULT_IMAGE_LAYER) === 'foreground'
+                          ? 'Foreground (above label content)'
+                          : 'Background (behind label content)'}
+                      </span>
+                    </span>
+                    {selectedImage.layer === 'background' ? (
+                      <span className="text-gray-400">
+                        While editing, label text is temporarily non-interactive so you can drag background media.
+                      </span>
+                    ) : null}
+                  </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Horizontal position ({Math.round(selectedImage.x * 100)}%)
@@ -1736,7 +1818,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                       onClick={() => handleReorderImage(selectedImage.id, 'front')}
                       className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
                     >
-                      Bring to Front
+                      Bring Above Text
                     </button>
                     <button
                       type="button"
@@ -1757,7 +1839,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                       onClick={() => handleReorderImage(selectedImage.id, 'back')}
                       className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors"
                     >
-                      Send to Back
+                      Send Behind Text
                     </button>
                     <button
                       type="button"

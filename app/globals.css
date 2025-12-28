@@ -183,7 +183,6 @@ select option:hover {
 .label-image-layer {
   position: absolute;
   inset: 0;
-  z-index: 5;
   pointer-events: none;
 }
 
@@ -204,6 +203,11 @@ select option:hover {
   pointer-events: auto;
   transition: border-color 120ms ease, box-shadow 120ms ease;
   position: relative;
+}
+
+.label-image-overlay[data-layer='background'] {
+  border-style: dotted;
+  background-color: rgba(59, 130, 246, 0.04);
 }
 
 .label-image-overlay img {
@@ -227,13 +231,21 @@ select option:hover {
 }
 
 .label-image-handle {
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
   background-color: #2563eb;
   border-radius: 9999px;
   position: absolute;
   cursor: pointer;
   box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(59, 130, 246, 0.4);
+  transition: background-color 120ms ease, transform 120ms ease;
+  touch-action: none;
+}
+
+.label-image-handle::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
 }
 
 .label-image-handle.resize {
@@ -246,6 +258,7 @@ select option:hover {
 
 .label-image-handle.rotate:active {
   cursor: grabbing;
+  transform: scale(1.05);
 }
 
 @media print {

@@ -1,3 +1,5 @@
+export type LabelImageLayer = 'foreground' | 'background';
+
 export interface LabelImage {
   id: string;
   src: string;
@@ -7,6 +9,7 @@ export interface LabelImage {
   height: number; // 0 - 1 (percentage of label height)
   rotation: number; // degrees
   zIndex: number;
+  layer?: LabelImageLayer;
 }
 
 export type LabelImageUpdate = Partial<Omit<LabelImage, 'id' | 'src'>>;

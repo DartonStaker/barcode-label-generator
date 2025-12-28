@@ -5,9 +5,67 @@ import Image from 'next/image';
 import Barcode from './Barcode';
 import { Product } from '@/lib/excelParser';
 import { LabelTemplate as LabelTemplateConfig } from '@/lib/labelTemplates';
-import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
+import { LabelImage, LabelImageLayer, LabelImageUpdate } from '@/lib/labelMedia';
 import { FieldLayout, LabelFieldKey, FieldPlacement, DEFAULT_FIELD_LAYOUT } from '@/lib/fieldLayout';
 import { Rnd } from 'react-rnd';
+
+type NormalizedEan13 = {
+  barcode: string;
+  display: string;
+  wasCorrected: boolean;
+};
+
+const DEFAULT_IMAGE_LAYER: LabelImageLayer = 'foreground';
+const BACKGROUND_LAYER_BASE_Z = -200;
+const FOREGROUND_LAYER_BASE_Z = 200;
+const LABEL_CONTENT_Z_INDEX = 0;
+
+const getOverlayLayer = (overlay: LabelImage): LabelImageLayer => overlay.layer ?? DEFAULT_IMAGE_LAYER;
+
+const sanitizeDigits = (value: string): string => value.replace(/\D/g, '');
+
+const calculateEan13CheckDigit = (digits: string): string => {
+  if (digits.length !== 12 || !/^\d+$/.test(digits)) {
+    return '0';
+  }
+
+  let sum = 0;
+  for (let index = 0; index < 12; index += 1) {
+    const digit = Number(digits[index]);
+    sum += index % 2 === 0 ? digit : digit * 3;
+  }
+
+  const mod = sum % 10;
+  return mod === 0 ? '0' : String(10 - mod);
+};
+
+const normalizeEan13Code = (rawValue: string): NormalizedEan13 | null => {
+  const digits = sanitizeDigits(rawValue);
+  if (digits.length === 0) {
+    return null;
+  }
+
+  const base = digits.length >= 12 ? digits.slice(0, 12) : digits.padStart(12, '0').slice(-12);
+  const computedCheckDigit = calculateEan13CheckDigit(base);
+  const normalizedBarcode = `${base}${computedCheckDigit}`;
+
+  if (digits.length >= 13) {
+    const provided = digits.slice(0, 13);
+    const providedCheckDigit = provided[12];
+    const wasCorrected = providedCheckDigit !== computedCheckDigit;
+    return {
+      barcode: normalizedBarcode,
+      display: wasCorrected ? normalizedBarcode : provided,
+      wasCorrected,
+    };
+  }
+
+  return {
+    barcode: normalizedBarcode,
+    display: normalizedBarcode,
+    wasCorrected: digits.length !== 13,
+  };
+};
 
 interface LabelTemplateProps {
   product?: Product;
@@ -81,7 +139,19 @@ export default function LabelTemplate({
   }, []);
 
   const overlays = useMemo(() => {
-    return (imageOverlays ?? []).slice().sort((a, b) => a.zIndex - b.zIndex);
+    return (imageOverlays ?? [])
+      .map((overlay) => ({
+        ...overlay,
+        layer: getOverlayLayer(overlay),
+      }))
+      .sort((a, b) => {
+        const layerRankA = a.layer === 'background' ? 0 : 1;
+        const layerRankB = b.layer === 'background' ? 0 : 1;
+        if (layerRankA !== layerRankB) {
+          return layerRankA - layerRankB;
+        }
+        return a.zIndex - b.zIndex;
+      });
   }, [imageOverlays]);
 
   const allowInteraction =
@@ -499,23 +569,29 @@ export default function LabelTemplate({
   const rawCode = (code || '').trim();
   const hasRawCode = rawCode.length > 0;
   let barcodeValue = '';
+  let displayCode = '';
   if (hasRawCode) {
     if (format === 'EAN13') {
-      const digitsOnly = rawCode.replace(/\D/g, '');
-      if (digitsOnly.length === 13) {
-        barcodeValue = digitsOnly;
-      } else if (digitsOnly.length > 0) {
-        barcodeValue = digitsOnly.padStart(13, '0').slice(-13);
+      const normalized = normalizeEan13Code(rawCode);
+      if (normalized) {
+        barcodeValue = normalized.barcode;
+        displayCode = normalized.display;
+        if (normalized.wasCorrected && (labelIndex === 0 || labelIndex === 10)) {
+          console.warn('Corrected EAN-13 barcode to valid checksum', {
+            original: rawCode,
+            corrected: normalized.barcode,
+          });
+        }
+      } else {
+        displayCode = rawCode;
       }
     } else {
       barcodeValue = rawCode;
+      displayCode = rawCode;
     }
+  } else {
+    displayCode = '';
   }
-  const displayCode = hasRawCode
-    ? format === 'EAN13'
-      ? barcodeValue || rawCode
-      : rawCode
-    : '';
 
   const emitFieldLayoutChange = (field: LabelFieldKey, placement: FieldPlacement) => {
     onFieldLayoutChange?.(field, placement);
@@ -772,6 +848,8 @@ export default function LabelTemplate({
           const isSelectedOverlay = activeImageId === overlay.id;
           const minWidth = containerWidth > 0 ? Math.max(containerWidth * 0.05, 8) : 8;
           const minHeight = containerHeight > 0 ? Math.max(containerHeight * 0.05, 8) : 8;
+          const overlayLayer = overlay.layer ?? DEFAULT_IMAGE_LAYER;
+          const layerBaseZ = overlayLayer === 'background' ? BACKGROUND_LAYER_BASE_Z : FOREGROUND_LAYER_BASE_Z;
 
           return (
             <Rnd
@@ -784,7 +862,7 @@ export default function LabelTemplate({
               minWidth={minWidth}
               minHeight={minHeight}
               style={{
-                zIndex: overlay.zIndex + 10,
+                zIndex: layerBaseZ + overlay.zIndex,
                 pointerEvents: allowInteraction ? 'auto' : 'none',
               }}
               onDragStart={() => {
@@ -800,6 +878,7 @@ export default function LabelTemplate({
             >
               <div
                 className={`label-image-overlay${isSelectedOverlay ? ' is-selected' : ''}`}
+                data-layer={overlayLayer}
                 onMouseDown={(event) => handleOverlayMouseDown(event, overlay.id)}
                 style={{
                   width: '100%',
@@ -863,7 +942,8 @@ export default function LabelTemplate({
           boxSizing: 'border-box',
           overflow: 'hidden',
           color: '#000000',
-          zIndex: 2,
+          zIndex: LABEL_CONTENT_Z_INDEX,
+          pointerEvents: isFieldEditing ? 'auto' : allowInteraction ? 'none' : 'auto',
         }}
       >
         {renderField(
