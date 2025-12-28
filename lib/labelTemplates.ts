@@ -278,8 +278,8 @@ export function getLabelPosition(
     
     let scaleX = 1;
     let scaleY = 1;
-    let offsetX = 0;
-    let offsetY = 0;
+    let offsetX = template.marginLeft;
+    let offsetY = template.marginTop;
     
     if (isA4Page) {
       // Calculate target grid size to achieve physical margins
