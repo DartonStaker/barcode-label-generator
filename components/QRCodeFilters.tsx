@@ -27,6 +27,7 @@ export default function QRCodeFiltersComponent({ filters, onFiltersChange }: QRC
     }, 300);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchValue]);
 
   const handleStatusChange = (status: QRCodeStatus | 'all') => {

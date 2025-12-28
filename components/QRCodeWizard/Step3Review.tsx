@@ -25,6 +25,7 @@ export default function QRCodeStep3({
   const [copiedImage, setCopiedImage] = useState(false);
 
   const handleCopyUrl = async () => {
+    if (!shortUrl) return;
     try {
       await navigator.clipboard.writeText(shortUrl);
       setCopiedUrl(true);
