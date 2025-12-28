@@ -208,7 +208,7 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     verticalPitch: 0.8346456693, // 2.12 cm
     columnOffsets: [
       -0.196850394, // -5 mm for column 1
-      -0.0787401575, // -2 mm for column 2
+      -0.157480315, // -4 mm for column 2 (additional -2 mm)
       0.0393700787, // +1 mm for column 3
       0.157480315, // +4 mm for column 4
       0.236220472, // +6 mm for column 5
