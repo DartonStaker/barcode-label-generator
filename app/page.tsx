@@ -176,7 +176,7 @@ export default function Home() {
   if (viewMode === 'menu') {
     return (
       <main className="min-h-screen p-8 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
               <AppBrand />
@@ -198,7 +198,7 @@ export default function Home() {
               Choose how you want to create your barcode labels
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-8">
               {/* Option 1: Custom Barcode Creation */}
               <button
                 onClick={() => {
@@ -211,7 +211,7 @@ export default function Home() {
                   <div className="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:bg-blue-700 transition-colors">
                     1
                   </div>
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-3 min-w-0">
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">
                       Custom Barcode Creation
                     </h2>
@@ -237,7 +237,7 @@ export default function Home() {
                   <div className="flex-shrink-0 w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:bg-green-700 transition-colors">
                     2
                   </div>
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-3 min-w-0">
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">
                       Customize from Default Template
                     </h2>
@@ -264,7 +264,7 @@ export default function Home() {
                   <div className="flex-shrink-0 w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:bg-purple-700 transition-colors">
                     3
                   </div>
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-3 min-w-0">
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">
                       QR Code Generator
                     </h2>
