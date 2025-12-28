@@ -182,6 +182,30 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     verticalPitch: 0.8340277778, // Matches table row height (1201 twips)
   },
   {
+    id: 'tower-w107-65',
+    name: 'Tower W107 65 UP',
+    description:
+      'Tower W107 mailing labels - 5 columns x 13 rows (65 labels) with 3.81 cm × 2.12 cm label size',
+    // Word template measurements (Tower W107):
+    // Top margin: 1.16 cm, Side margins: 0.94 cm, Page size: 21 cm × 29.84 cm
+    // Label width: 3.81 cm, Label height: 2.12 cm
+    // Horizontal pitch: 3.82 cm, Vertical pitch: 2.12 cm, 5 across × 13 down
+    labelWidth: 1.4996062992, // 3.81 cm
+    labelHeight: 0.8346456693, // 2.12 cm
+    columns: 5,
+    rows: 13,
+    pageWidth: 8.2677165354, // 21 cm
+    pageHeight: 11.751968504, // 29.84 cm
+    marginTop: 0.4566929134, // 1.16 cm
+    marginBottom: 0.4448818894, // derived from page height and grid
+    marginLeft: 0.3700787402, // 0.94 cm
+    marginRight: 0.382283463, // derived from page width and grid
+    gapHorizontal: 0.0043307088, // 0.01 cm nominal gap
+    gapVertical: 0, // pitch equals height
+    horizontalPitch: 1.5039370079, // 3.82 cm
+    verticalPitch: 0.8346456693, // 2.12 cm
+  },
+  {
     id: 'custom',
     name: 'Custom Template',
     description: 'Customizable grid layout',
