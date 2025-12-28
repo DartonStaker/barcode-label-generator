@@ -23,7 +23,11 @@ export default function QRCodeEnhanced({
   const renderFrame = () => {
     if (frameStyle === 'none') return null;
 
-    const frameSize = size + 40;
+    // For scan_me styles, we need extra space for the text banner
+    const needsTextBanner = frameStyle === 'scan_me' || frameStyle === 'scan_me_simple' || frameStyle === 'scan_me_qr' || frameStyle === 'scan_me_menu';
+    const framePadding = needsTextBanner ? 60 : 40; // Extra padding for text banner
+    const frameSize = size + framePadding;
+    
     const frameClasses: Record<string, string> = {
       rounded: 'rounded-xl border-2',
       circular: 'rounded-full border-2',
@@ -35,7 +39,7 @@ export default function QRCodeEnhanced({
 
     return (
       <div
-        className={`absolute flex items-center justify-center ${frameClasses[frameStyle] || ''}`}
+        className={`absolute flex items-start justify-center ${frameClasses[frameStyle] || ''}`}
         style={{
           width: frameSize,
           height: frameSize,
@@ -43,10 +47,19 @@ export default function QRCodeEnhanced({
           left: '50%',
           transform: 'translate(-50%, -50%)',
           borderColor: foregroundColor,
+          paddingTop: needsTextBanner ? '8px' : '0',
         }}
       >
-        {(frameStyle === 'scan_me' || frameStyle === 'scan_me_simple' || frameStyle === 'scan_me_qr' || frameStyle === 'scan_me_menu') && (
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-xs font-semibold whitespace-nowrap" style={{ color: foregroundColor }}>
+        {needsTextBanner && (
+          <div 
+            className="absolute top-0 right-0 px-2 py-1 text-xs font-semibold whitespace-nowrap border-2 rounded"
+            style={{ 
+              color: foregroundColor,
+              borderColor: foregroundColor,
+              backgroundColor: backgroundColor,
+              transform: 'translate(4px, -4px)',
+            }}
+          >
             SCAN ME
           </div>
         )}
@@ -67,10 +80,23 @@ export default function QRCodeEnhanced({
 
   const logoSource = getLogoSource();
 
+  const needsTextBanner = frameStyle === 'scan_me' || frameStyle === 'scan_me_simple' || frameStyle === 'scan_me_qr' || frameStyle === 'scan_me_menu';
+  const containerPadding = needsTextBanner ? 30 : 0; // Extra space for text banner
+  const containerSize = size + containerPadding;
+
   return (
-    <div className={`relative inline-block ${className}`} style={{ width: size, height: size }}>
+    <div className={`relative inline-block ${className}`} style={{ width: containerSize, height: containerSize }}>
       {renderFrame()}
-      <div className="relative" style={{ width: size, height: size }}>
+      <div 
+        className="relative" 
+        style={{ 
+          width: size, 
+          height: size,
+          marginTop: needsTextBanner ? '20px' : '0',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
         <QRCodeSVG
           value={value}
           size={size}
