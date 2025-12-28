@@ -102,6 +102,10 @@ export default function QRCodeStep3({
                 <span className="text-gray-600 capitalize">{design.cornerStyle.replace(/-/g, ' ')}</span>
               </div>
               <div>
+                <span className="font-medium text-gray-700">Center Style:</span>{' '}
+                <span className="text-gray-600 capitalize">{design.centerStyle.replace(/_/g, ' ')}</span>
+              </div>
+              <div>
                 <span className="font-medium text-gray-700">Border Style:</span>{' '}
                 <span className="text-gray-600 capitalize">{design.borderStyle.replace(/_/g, ' ')}</span>
               </div>

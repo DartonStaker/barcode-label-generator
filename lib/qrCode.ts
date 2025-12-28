@@ -18,16 +18,18 @@ export type QRCodeType =
 
 export type QRCodeStatus = 'active' | 'inactive' | 'archived';
 
-export type QRCodeFrameStyle = 'none' | 'rounded' | 'circular' | 'scan_me' | 'scan_me_simple' | 'scan_me_qr' | 'scan_me_menu';
+export type QRCodeFrameStyle = 'none' | 'scan_me_bottom' | 'scan_me_top' | 'scan_me_banner_bottom' | 'scan_me_banner_top' | 'scan_me_thick_bottom' | 'scan_me_thick_top' | 'scan_me_shopping_bag' | 'scan_me_clapperboard';
 export type QRCodeModuleShape = 'square' | 'rounded' | 'dots' | 'extra_rounded' | 'organic' | 'classy' | 'classy-rounded' | 'smooth';
 export type QRCodeCornerStyle = 'square' | 'rounded' | 'extra-rounded' | 'dot' | 'star' | 'circle' | 'diamond' | 'plus';
-export type QRCodeBorderStyle = 'none' | 'square' | 'rounded' | 'star' | 'circle' | 'diamond';
+export type QRCodeCenterStyle = 'square' | 'rounded' | 'circle' | 'teardrop' | 'spiky' | 'star' | 'diamond' | 'plus';
+export type QRCodeBorderStyle = 'none' | 'square' | 'rounded' | 'star' | 'circle' | 'diamond' | 'teardrop' | 'square_cutout';
 export type QRCodeLogoType = 'none' | 'upload' | 'link' | 'location' | 'email' | 'whatsapp' | 'wifi' | 'contact' | 'paypal' | 'bitcoin' | 'scan_me' | 'scan_me_text' | 'scan_me_icon';
 
 export interface QRCodeDesign {
   frameStyle: QRCodeFrameStyle;
   moduleShape: QRCodeModuleShape;
   cornerStyle: QRCodeCornerStyle;
+  centerStyle: QRCodeCenterStyle;
   borderStyle: QRCodeBorderStyle;
   logoType: QRCodeLogoType;
   logoUrl?: string;
@@ -227,6 +229,7 @@ export const DEFAULT_QR_DESIGN: QRCodeDesign = {
   frameStyle: 'none',
   moduleShape: 'square',
   cornerStyle: 'square',
+  centerStyle: 'square',
   borderStyle: 'none',
   logoType: 'none',
   foregroundColor: '#000000',

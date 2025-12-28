@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import QRCodeAdvanced from '../QRCodeAdvanced';
-import { QRCodeDesign, QRCodeFrameStyle, QRCodeModuleShape, QRCodeCornerStyle, QRCodeBorderStyle, QRCodeLogoType } from '@/lib/qrCode';
+import { QRCodeDesign, QRCodeFrameStyle, QRCodeModuleShape, QRCodeCornerStyle, QRCodeCenterStyle, QRCodeBorderStyle, QRCodeLogoType } from '@/lib/qrCode';
 
 interface Step2DesignProps {
   design: QRCodeDesign;
@@ -14,12 +14,14 @@ type DesignTab = 'frame' | 'shape' | 'logo';
 
 const FRAME_STYLES: { value: QRCodeFrameStyle; label: string; icon: string }[] = [
   { value: 'none', label: 'None', icon: '✕' },
-  { value: 'rounded', label: 'Rounded', icon: '▢' },
-  { value: 'circular', label: 'Circular', icon: '○' },
-  { value: 'scan_me', label: 'Scan Me', icon: '📱' },
-  { value: 'scan_me_simple', label: 'Scan Me Simple', icon: '📱' },
-  { value: 'scan_me_qr', label: 'Scan Me QR', icon: '📱' },
-  { value: 'scan_me_menu', label: 'Scan Me Menu', icon: '📱' },
+  { value: 'scan_me_bottom', label: 'Bottom Text', icon: '📱' },
+  { value: 'scan_me_top', label: 'Top Text', icon: '📱' },
+  { value: 'scan_me_banner_bottom', label: 'Banner Bottom', icon: '📱' },
+  { value: 'scan_me_banner_top', label: 'Banner Top', icon: '📱' },
+  { value: 'scan_me_thick_bottom', label: 'Thick Bottom', icon: '📱' },
+  { value: 'scan_me_thick_top', label: 'Thick Top', icon: '📱' },
+  { value: 'scan_me_shopping_bag', label: 'Shopping Bag', icon: '🛍️' },
+  { value: 'scan_me_clapperboard', label: 'Clapperboard', icon: '🎬' },
 ];
 
 const MODULE_SHAPES: { value: QRCodeModuleShape; label: string; icon: string }[] = [
@@ -44,6 +46,17 @@ const CORNER_STYLES: { value: QRCodeCornerStyle; label: string; icon: string }[]
   { value: 'plus', label: 'Plus', icon: '+' },
 ];
 
+const CENTER_STYLES: { value: QRCodeCenterStyle; label: string; icon: string }[] = [
+  { value: 'square', label: 'Square', icon: '▢' },
+  { value: 'rounded', label: 'Rounded', icon: '▢' },
+  { value: 'circle', label: 'Circle', icon: '○' },
+  { value: 'teardrop', label: 'Teardrop', icon: '💧' },
+  { value: 'spiky', label: 'Spiky', icon: '⭐' },
+  { value: 'star', label: 'Star', icon: '★' },
+  { value: 'diamond', label: 'Diamond', icon: '◆' },
+  { value: 'plus', label: 'Plus', icon: '+' },
+];
+
 const BORDER_STYLES: { value: QRCodeBorderStyle; label: string; icon: string }[] = [
   { value: 'none', label: 'None', icon: '✕' },
   { value: 'square', label: 'Square', icon: '▢' },
@@ -51,6 +64,8 @@ const BORDER_STYLES: { value: QRCodeBorderStyle; label: string; icon: string }[]
   { value: 'star', label: 'Star', icon: '★' },
   { value: 'circle', label: 'Circle', icon: '○' },
   { value: 'diamond', label: 'Diamond', icon: '◆' },
+  { value: 'teardrop', label: 'Teardrop', icon: '💧' },
+  { value: 'square_cutout', label: 'Square Cutout', icon: '▢' },
 ];
 
 const LOGO_TYPES: { value: QRCodeLogoType; label: string; icon: string }[] = [
@@ -246,6 +261,27 @@ export default function QRCodeStep2({ design, onDesignChange, qrValue }: Step2De
                   >
                     <div className="text-xl mb-1">{corner.icon}</div>
                     <div className="text-xs font-medium">{corner.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-4">Center Style</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {CENTER_STYLES.map((center) => (
+                  <button
+                    key={center.value}
+                    type="button"
+                    onClick={() => handleDesignUpdate({ centerStyle: center.value })}
+                    className={`p-3 border-2 rounded-lg text-center transition-all ${
+                      design.centerStyle === center.value
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{center.icon}</div>
+                    <div className="text-xs font-medium">{center.label}</div>
                   </button>
                 ))}
               </div>

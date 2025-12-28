@@ -24,17 +24,19 @@ export default function QRCodeEnhanced({
     if (frameStyle === 'none') return null;
 
     // For scan_me styles, we need extra space for the text banner
-    const needsTextBanner = frameStyle === 'scan_me' || frameStyle === 'scan_me_simple' || frameStyle === 'scan_me_qr' || frameStyle === 'scan_me_menu';
+    const needsTextBanner = frameStyle.startsWith('scan_me');
     const framePadding = needsTextBanner ? 60 : 40; // Extra padding for text banner
     const frameSize = size + framePadding;
     
     const frameClasses: Record<string, string> = {
-      rounded: 'rounded-xl border-2',
-      circular: 'rounded-full border-2',
-      scan_me: 'rounded-lg border-4',
-      scan_me_simple: 'rounded-lg border-2',
-      scan_me_qr: 'rounded-lg border-4 bg-purple-50',
-      scan_me_menu: 'rounded-lg border-4 bg-gradient-to-br from-purple-50 to-purple-100',
+      scan_me_bottom: 'rounded-lg border-2',
+      scan_me_top: 'rounded-lg border-2',
+      scan_me_banner_bottom: 'rounded-lg border-2',
+      scan_me_banner_top: 'rounded-lg border-2',
+      scan_me_thick_bottom: 'rounded-lg border-4',
+      scan_me_thick_top: 'rounded-lg border-4',
+      scan_me_shopping_bag: 'rounded-lg border-2',
+      scan_me_clapperboard: 'rounded-lg border-2',
     };
 
     return (
@@ -80,7 +82,7 @@ export default function QRCodeEnhanced({
 
   const logoSource = getLogoSource();
 
-  const needsTextBanner = frameStyle === 'scan_me' || frameStyle === 'scan_me_simple' || frameStyle === 'scan_me_qr' || frameStyle === 'scan_me_menu';
+  const needsTextBanner = frameStyle !== 'none';
   const containerPadding = needsTextBanner ? 30 : 0; // Extra space for text banner
   const containerSize = size + containerPadding;
 
