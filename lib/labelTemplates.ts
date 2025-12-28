@@ -197,10 +197,10 @@ export const AVAILABLE_TEMPLATES: LabelTemplate[] = [
     pageWidth: 8.2677165354, // 21 cm
     pageHeight: 11.751968504, // 29.84 cm
     marginTop: 0.4566929134, // 1.16 cm
-    marginBottom: 0.4448818894, // derived from page height and grid
+    marginBottom: 0.4409448819, // 1.12 cm
     marginLeft: 0.3700787402, // 0.94 cm
-    marginRight: 0.382283463, // derived from page width and grid
-    gapHorizontal: 0.0043307088, // 0.01 cm nominal gap
+    marginRight: 0.3700787402, // 0.94 cm
+    gapHorizontal: 0.0039370079, // 0.01 cm nominal gap
     gapVertical: 0, // pitch equals height
     horizontalPitch: 1.5039370079, // 3.82 cm
     verticalPitch: 0.8346456693, // 2.12 cm
