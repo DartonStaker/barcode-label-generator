@@ -275,3 +275,36 @@ select option:hover {
   }
 }
 
+/* QR Code Component Styles */
+.qr-code-container {
+  position: relative;
+  display: inline-block;
+}
+
+.qr-code-logo-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* QR Code Card Hover Effects */
+.qr-code-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qr-code-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
