@@ -1585,7 +1585,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                                     onAddProducts(newProducts);
                                     // Select the newly added products
                                     const newIndices = Array.from({ length: newProducts.length }, (_, i) => products.length + i);
-                                    setSelectedProducts(new Set([...selectedProducts, ...newIndices]));
+                                    setSelectedProducts(new Set([...Array.from(selectedProducts), ...newIndices]));
                                     // Clear manual barcodes
                                     setManualBarcodes('');
                                     alert(`Added ${newProducts.length} product(s) from barcode numbers`);
