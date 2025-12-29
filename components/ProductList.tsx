@@ -917,7 +917,6 @@ export default function ProductList({ products, initialTemplateId, encodingType,
 
   // For custom mode, allow rendering even without products (to show template preview)
   const noProducts = products.length === 0;
-  const isCustomMode = initialTemplateId === 'custom';
   
   // If no products selected or labelsPerPage is 0, don't generate any labels
   // Note: We still continue to calculate values for display, but productsToShow will be empty
