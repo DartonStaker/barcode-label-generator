@@ -568,11 +568,15 @@ export default function LabelTemplate({
   const hasRawCode = rawCode.length > 0;
   let barcodeValue = '';
   let displayCode = '';
+  
+  // Extract and normalize barcode value
   if (hasRawCode) {
     if (format === 'EAN13') {
       const normalized = normalizeEan13Code(rawCode);
       if (normalized) {
+        // Use the normalized barcode for rendering
         barcodeValue = normalized.barcode;
+        // Use the display format (with spaces) for showing the number
         displayCode = normalized.display;
         if (normalized.wasCorrected && (labelIndex === 0 || labelIndex === 10)) {
           console.warn('Corrected EAN-13 barcode to valid checksum', {
@@ -581,14 +585,18 @@ export default function LabelTemplate({
           });
         }
       } else {
+        // If normalization fails, still try to use the raw code
         barcodeValue = rawCode;
         displayCode = rawCode;
       }
     } else {
+      // For CODE-128, use raw code as-is
       barcodeValue = rawCode;
       displayCode = rawCode;
     }
   } else {
+    // No code available
+    barcodeValue = '';
     displayCode = '';
   }
 
@@ -1019,7 +1027,7 @@ export default function LabelTemplate({
                   format={format}
                   width={barcodeWidth * widthScale}
                   height={barcodeHeight * heightScale}
-                  displayValue={format === 'EAN13'}
+                  displayValue={format === 'EAN13' && (!fieldVisibility || fieldVisibility.barcodeNumber)}
                 />
               ) : isFieldEditing ? (
                 <span className="text-xs text-blue-600">Barcode area</span>
