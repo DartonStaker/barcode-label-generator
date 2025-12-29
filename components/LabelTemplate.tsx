@@ -39,6 +39,12 @@ const calculateEan13CheckDigit = (digits: string): string => {
   return mod === 0 ? '0' : String(10 - mod);
 };
 
+// Format EAN-13 with spaces: "9 906123 456789" (first digit, next 6, last 6)
+const formatEan13Display = (barcode: string): string => {
+  if (barcode.length !== 13) return barcode;
+  return `${barcode[0]} ${barcode.slice(1, 7)} ${barcode.slice(7)}`;
+};
+
 const normalizeEan13Code = (rawValue: string): NormalizedEan13 | null => {
   const digits = sanitizeDigits(rawValue);
   if (digits.length === 0) {
@@ -53,16 +59,17 @@ const normalizeEan13Code = (rawValue: string): NormalizedEan13 | null => {
     const provided = digits.slice(0, 13);
     const providedCheckDigit = provided[12];
     const wasCorrected = providedCheckDigit !== computedCheckDigit;
+    const displayBarcode = wasCorrected ? normalizedBarcode : provided;
     return {
       barcode: normalizedBarcode,
-      display: wasCorrected ? normalizedBarcode : provided,
+      display: formatEan13Display(displayBarcode), // Format with spaces to match JsBarcode
       wasCorrected,
     };
   }
 
   return {
     barcode: normalizedBarcode,
-    display: normalizedBarcode,
+    display: formatEan13Display(normalizedBarcode), // Format with spaces to match JsBarcode
     wasCorrected: digits.length !== 13,
   };
 };
@@ -1033,7 +1040,7 @@ export default function LabelTemplate({
             >
               {barcodeValue ? (
                 <Barcode
-                  key={`barcode-${labelIndex}-${barcodeValue}-${format}-${product?.code || product?.Code || 'no-code'}`}
+                  key={`barcode-${labelIndex}-${rawCode}-${barcodeValue}-${format}`}
                   value={barcodeValue}
                   format={format}
                   width={barcodeWidth * widthScale}

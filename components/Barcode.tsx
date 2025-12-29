@@ -21,10 +21,14 @@ export default function Barcode({
 }: BarcodeProps) {
   const barcodeRef = useRef<SVGSVGElement>(null);
   const lastValueRef = useRef<string>('');
+  const lastDisplayValueRef = useRef<boolean>(displayValue);
 
   useEffect(() => {
-    // Only regenerate if value actually changed
-    if (barcodeRef.current && value && value !== lastValueRef.current) {
+    // Regenerate if value changed OR displayValue changed
+    const valueChanged = value !== lastValueRef.current;
+    const displayValueChanged = displayValue !== lastDisplayValueRef.current;
+    
+    if (barcodeRef.current && value && (valueChanged || displayValueChanged)) {
       try {
         // Clear the SVG before re-rendering to ensure fresh barcode
         // This is critical to prevent stale barcode data
@@ -52,6 +56,7 @@ export default function Barcode({
         // Generate barcode with the current value
         JsBarcode(barcodeRef.current, value, options);
         lastValueRef.current = value; // Update last value
+        lastDisplayValueRef.current = displayValue; // Update last displayValue
         
         // Debug log for EAN-13 to verify value is correct
         if (format === 'EAN13' && (value.length === 13 || value.length === 12)) {
@@ -64,6 +69,7 @@ export default function Barcode({
       // Clear if no value
       barcodeRef.current.innerHTML = '';
       lastValueRef.current = '';
+      lastDisplayValueRef.current = displayValue;
     }
   }, [value, width, height, format, displayValue]);
 
