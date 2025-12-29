@@ -563,18 +563,6 @@ export default function LabelTemplate({
   const barcodeHeight = isSmallLabel ? 18 : labelHeight < 2 ? 22 : 26;
   const barcodeWidth = isSmallLabel ? 1.05 : 1.2;
 
-  // CRITICAL: Log extracted values to see if data extraction is working
-  if (labelIndex === 0 || labelIndex === 10) {
-    console.log(`🔍 LabelTemplate [index ${labelIndex}] - Extracted values:`, {
-      code: code || 'EMPTY',
-      description: description || 'EMPTY',
-      price: price || 'EMPTY',
-      formattedPrice: formattedPrice || 'EMPTY',
-      line1: line1 || 'EMPTY',
-      line2: line2 || 'EMPTY'
-    });
-  }
-
   const priceDisplay = formattedPrice || '';
   const rawCode = (code || '').trim();
   const hasRawCode = rawCode.length > 0;
@@ -593,6 +581,7 @@ export default function LabelTemplate({
           });
         }
       } else {
+        barcodeValue = rawCode;
         displayCode = rawCode;
       }
     } else {
@@ -601,6 +590,22 @@ export default function LabelTemplate({
     }
   } else {
     displayCode = '';
+  }
+
+  // CRITICAL: Log extracted values to see if data extraction is working
+  if (labelIndex === 0 || labelIndex === 10 || labelIndex === 1) {
+    console.log(`🔍 LabelTemplate [index ${labelIndex}] - Extracted values:`, {
+      code: code || 'EMPTY',
+      rawCode: rawCode || 'EMPTY',
+      barcodeValue: barcodeValue || 'EMPTY',
+      displayCode: displayCode || 'EMPTY',
+      description: description || 'EMPTY',
+      price: price || 'EMPTY',
+      formattedPrice: formattedPrice || 'EMPTY',
+      line1: line1 || 'EMPTY',
+      line2: line2 || 'EMPTY',
+      productKeys: product ? Object.keys(product) : []
+    });
   }
 
   const emitFieldLayoutChange = (field: LabelFieldKey, placement: FieldPlacement) => {
@@ -1009,7 +1014,7 @@ export default function LabelTemplate({
             >
               {barcodeValue ? (
                 <Barcode
-                  key={`barcode-${barcodeValue}-${format}`}
+                  key={`barcode-${labelIndex}-${barcodeValue}-${format}`}
                   value={barcodeValue}
                   format={format}
                   width={barcodeWidth * widthScale}

@@ -25,6 +25,7 @@ export default function Barcode({
     if (barcodeRef.current && value) {
       try {
         // Clear the SVG before re-rendering to ensure fresh barcode
+        // This is critical to prevent stale barcode data
         if (barcodeRef.current) {
           barcodeRef.current.innerHTML = '';
         }
@@ -46,10 +47,14 @@ export default function Barcode({
           // JsBarcode automatically formats EAN-13 as: "9 902262 949558"
         }
         
+        // Generate barcode with the current value
         JsBarcode(barcodeRef.current, value, options);
       } catch (error) {
-        console.error('Barcode generation error:', error);
+        console.error('Barcode generation error:', error, { value, format, displayValue });
       }
+    } else if (barcodeRef.current && !value) {
+      // Clear if no value
+      barcodeRef.current.innerHTML = '';
     }
   }, [value, width, height, format, displayValue]);
 
