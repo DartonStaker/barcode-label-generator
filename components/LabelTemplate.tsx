@@ -67,6 +67,14 @@ const normalizeEan13Code = (rawValue: string): NormalizedEan13 | null => {
   };
 };
 
+interface FieldVisibility {
+  brand: boolean;
+  description: boolean;
+  price: boolean;
+  barcodeNumber: boolean;
+  barcodeImage: boolean;
+}
+
 interface LabelTemplateProps {
   product?: Product;
   index?: number;
@@ -84,6 +92,7 @@ interface LabelTemplateProps {
   allowImageInteraction?: boolean;
   draggingImageId?: string | null;
   onImageDrop?: (labelIndex: number, imageId: string, position: { x: number; y: number }) => void;
+  fieldVisibility?: FieldVisibility;
 }
 
 export default function LabelTemplate({
@@ -103,6 +112,7 @@ export default function LabelTemplate({
   allowImageInteraction,
   draggingImageId,
   onImageDrop,
+  fieldVisibility,
 }: LabelTemplateProps) {
   const labelIndex = index ?? 0;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -946,7 +956,7 @@ export default function LabelTemplate({
           pointerEvents: isFieldEditing ? 'auto' : allowInteraction ? 'none' : 'auto',
         }}
       >
-        {renderField(
+        {(!fieldVisibility || fieldVisibility.price) && renderField(
           'price',
           ({ widthScale, heightScale }) => (
             <div
@@ -965,7 +975,7 @@ export default function LabelTemplate({
           { justify: 'flex-start', align: 'flex-start' }
         )}
 
-        {renderField(
+        {(!fieldVisibility || fieldVisibility.barcodeNumber) && renderField(
           'code',
           ({ widthScale, heightScale }) => (
             <div
@@ -984,7 +994,7 @@ export default function LabelTemplate({
           { justify: 'center', align: 'center' }
         )}
 
-        {renderField(
+        {(!fieldVisibility || fieldVisibility.barcodeImage) && renderField(
           'barcode',
           ({ widthScale, heightScale }) => (
             <div
@@ -999,6 +1009,7 @@ export default function LabelTemplate({
             >
               {barcodeValue ? (
                 <Barcode
+                  key={`barcode-${barcodeValue}-${format}`}
                   value={barcodeValue}
                   format={format}
                   width={barcodeWidth * widthScale}
@@ -1013,7 +1024,7 @@ export default function LabelTemplate({
           { justify: 'center', align: 'center', className: 'field-barcode' }
         )}
 
-        {renderField(
+        {(!fieldVisibility || fieldVisibility.brand) && renderField(
           'line1',
           ({ widthScale, heightScale }) => (
             <div
@@ -1032,7 +1043,7 @@ export default function LabelTemplate({
           )
         )}
 
-        {renderField(
+        {(!fieldVisibility || fieldVisibility.description) && renderField(
           'line2',
           ({ widthScale, heightScale }) => (
             <div

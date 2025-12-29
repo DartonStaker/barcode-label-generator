@@ -16,6 +16,7 @@ interface ProductListProps {
   encodingType: EncodingType | null;
   onChangeEncoding: () => void;
   onAddProducts?: (newProducts: Product[]) => void;
+  onDeleteProducts?: (indices: number[]) => void;
 }
 
 // Helper functions for unit conversion
@@ -72,7 +73,7 @@ const mergeWithDefaultLayout = (layout: FieldLayout): FieldLayout => {
   return merged;
 };
 
-export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding, onAddProducts }: ProductListProps) {
+export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding, onAddProducts, onDeleteProducts }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || SELECT_TEMPLATE_OPTION);
   const isCustomMode = initialTemplateId === 'custom';
@@ -115,6 +116,15 @@ export default function ProductList({ products, initialTemplateId, encodingType,
   const [fieldLayout, setFieldLayout] = useState<FieldLayout>(() => cloneFieldLayout(DEFAULT_FIELD_LAYOUT));
   const [showHints, setShowHints] = useState<boolean>(true);
   const [templateHintVisible, setTemplateHintVisible] = useState<boolean>(false);
+  
+  // Field visibility toggles for EAN-13
+  const [fieldVisibility, setFieldVisibility] = useState({
+    brand: true,      // line1
+    description: true, // line2
+    price: true,
+    barcodeNumber: true, // code
+    barcodeImage: true,  // barcode
+  });
 
   const clamp = useCallback((value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value)), []);
   const normalizeRotation = (angle: number) => ((angle % 360) + 360) % 360;
@@ -1031,6 +1041,41 @@ export default function ProductList({ products, initialTemplateId, encodingType,
     setSelectedProducts(newSelected);
   };
 
+  const handleDeleteProducts = (indices: number[]) => {
+    if (!onDeleteProducts) {
+      alert('Delete functionality not available');
+      return;
+    }
+    
+    if (indices.length === 0) {
+      alert('Please select products to delete');
+      return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${indices.length} product(s)?`)) {
+      onDeleteProducts(indices);
+      
+      // Update selected products set - remove deleted indices and adjust remaining indices
+      const sortedIndices = [...indices].sort((a, b) => b - a); // Sort descending
+      const newSelected = new Set(selectedProducts);
+      
+      // Remove deleted indices
+      sortedIndices.forEach(idx => newSelected.delete(idx));
+      
+      // Adjust remaining indices (subtract 1 for each deleted item before this index)
+      const adjustedSelected = new Set<number>();
+      newSelected.forEach(idx => {
+        let adjustment = 0;
+        for (const deletedIdx of sortedIndices) {
+          if (deletedIdx < idx) adjustment++;
+        }
+        adjustedSelected.add(idx - adjustment);
+      });
+      
+      setSelectedProducts(adjustedSelected);
+    }
+  };
+
   return (
     <div className="w-full" style={{ width: '100%', maxWidth: 'none', overflow: 'visible' }}>
       {/* Encoding Banner - Only show if encoding is selected */}
@@ -1758,12 +1803,22 @@ export default function ProductList({ products, initialTemplateId, encodingType,
           <label className="block text-sm font-medium text-gray-700">
             Select Products to Print
           </label>
-          <button
-            onClick={handleSelectAll}
-            className="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-          >
-            {selectedProducts.size === products.length ? 'Deselect All' : 'Select All'}
-          </button>
+          <div className="flex gap-2">
+            {onDeleteProducts && selectedProducts.size > 0 && (
+              <button
+                onClick={() => handleDeleteProducts(Array.from(selectedProducts))}
+                className="px-4 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Delete Selected ({selectedProducts.size})
+              </button>
+            )}
+            <button
+              onClick={handleSelectAll}
+              className="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+            >
+              {selectedProducts.size === products.length ? 'Deselect All' : 'Select All'}
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
           {products.map((product, index) => {
@@ -1772,29 +1827,43 @@ export default function ProductList({ products, initialTemplateId, encodingType,
             const isSelected = selectedProducts.has(index);
             
             return (
-              <label
+              <div
                 key={index}
-                className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-start p-3 border-2 rounded-lg transition-colors ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => handleToggleProduct(index)}
-                  className="mt-1 mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">
-                    {code || `Product ${index + 1}`}
+                <label className="flex items-start cursor-pointer flex-1 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => handleToggleProduct(index)}
+                    className="mt-1 mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {code || `Product ${index + 1}`}
+                    </div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {description || 'No description'}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {description || 'No description'}
-                  </div>
-                </div>
-              </label>
+                </label>
+                {onDeleteProducts && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteProducts([index]);
+                    }}
+                    className="ml-2 text-red-600 hover:text-red-800 text-sm"
+                    title="Delete product"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -2044,6 +2113,63 @@ export default function ProductList({ products, initialTemplateId, encodingType,
         </div>
       </div>
 
+      {/* Field Visibility Toggles (for EAN-13) */}
+      {barcodeFormat === 'EAN13' && (
+        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+          <h3 className="text-sm font-semibold text-gray-800 mb-3">Field Visibility (EAN-13)</h3>
+          <p className="text-xs text-gray-600 mb-4">
+            Toggle to show or hide specific fields on your labels.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={fieldVisibility.brand}
+                onChange={(e) => setFieldVisibility({ ...fieldVisibility, brand: e.target.checked })}
+              />
+              Brand
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={fieldVisibility.description}
+                onChange={(e) => setFieldVisibility({ ...fieldVisibility, description: e.target.checked })}
+              />
+              Description
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={fieldVisibility.price}
+                onChange={(e) => setFieldVisibility({ ...fieldVisibility, price: e.target.checked })}
+              />
+              Price
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={fieldVisibility.barcodeNumber}
+                onChange={(e) => setFieldVisibility({ ...fieldVisibility, barcodeNumber: e.target.checked })}
+              />
+              Barcode Number
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={fieldVisibility.barcodeImage}
+                onChange={(e) => setFieldVisibility({ ...fieldVisibility, barcodeImage: e.target.checked })}
+              />
+              Barcode Image
+            </label>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Field Layout Controls</h3>
@@ -2282,6 +2408,7 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                   fieldLayout={effectiveFieldLayout}
                   isFieldEditing={isFieldEditing}
                   onFieldLayoutChange={handleFieldLayoutChange}
+                  fieldVisibility={barcodeFormat === 'EAN13' ? fieldVisibility : undefined}
                 />
               </div>
             </>

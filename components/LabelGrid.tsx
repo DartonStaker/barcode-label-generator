@@ -6,6 +6,14 @@ import { LabelTemplate as LabelTemplateConfig, calculateLabelPositions, getLabel
 import { LabelImage, LabelImageUpdate } from '@/lib/labelMedia';
 import { FieldLayout, FieldPlacement, LabelFieldKey } from '@/lib/fieldLayout';
 
+interface FieldVisibility {
+  brand: boolean;
+  description: boolean;
+  price: boolean;
+  barcodeNumber: boolean;
+  barcodeImage: boolean;
+}
+
 interface LabelGridProps {
   products: Product[];
   template: LabelTemplateConfig;
@@ -25,6 +33,7 @@ interface LabelGridProps {
   fieldLayout: FieldLayout;
   isFieldEditing?: boolean;
   onFieldLayoutChange?: (field: LabelFieldKey, placement: FieldPlacement) => void;
+  fieldVisibility?: FieldVisibility;
 }
 
 export default function LabelGrid({
@@ -46,6 +55,7 @@ export default function LabelGrid({
   fieldLayout,
   isFieldEditing = false,
   onFieldLayoutChange,
+  fieldVisibility,
 }: LabelGridProps) {
   // Maximum slots available on a single physical sheet
   const maxLabelsPerPage = template.columns * template.rows;
@@ -379,6 +389,7 @@ export default function LabelGrid({
                   allowImageInteraction={allowImageInteraction}
                   draggingImageId={draggingImageId}
                   onImageDrop={onImageDrop}
+                  fieldVisibility={fieldVisibility}
                 />
               </div>
             );

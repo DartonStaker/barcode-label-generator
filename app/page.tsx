@@ -627,6 +627,17 @@ export default function Home() {
                 // Save to database
                 saveProductsToDatabase([...products, ...newProducts]);
               }}
+              onDeleteProducts={(indices) => {
+                // Sort indices in descending order to delete from end to start
+                const sortedIndices = [...indices].sort((a, b) => b - a);
+                const newProducts = [...products];
+                sortedIndices.forEach(idx => {
+                  newProducts.splice(idx, 1);
+                });
+                setProducts(newProducts);
+                // Save to database
+                saveProductsToDatabase(newProducts);
+              }}
             />
           </div>
         )}

@@ -24,6 +24,11 @@ export default function Barcode({
   useEffect(() => {
     if (barcodeRef.current && value) {
       try {
+        // Clear the SVG before re-rendering to ensure fresh barcode
+        if (barcodeRef.current) {
+          barcodeRef.current.innerHTML = '';
+        }
+        
         // For EAN-13, ensure proper formatting with spacing
         const options: any = {
           format: format,
