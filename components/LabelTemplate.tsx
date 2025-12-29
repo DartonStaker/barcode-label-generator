@@ -570,22 +570,27 @@ export default function LabelTemplate({
   let displayCode = '';
   
   // Extract and normalize barcode value
+  // CRITICAL: This must be recalculated for each product to ensure unique barcodes
   if (hasRawCode) {
     if (format === 'EAN13') {
       const normalized = normalizeEan13Code(rawCode);
       if (normalized) {
-        // Use the normalized barcode for rendering
+        // Use the normalized barcode for rendering (13 digits with correct check digit)
         barcodeValue = normalized.barcode;
         // Use the display format (with spaces) for showing the number
+        // Format: "9 906123 456789" (first digit, next 6, last 6)
         displayCode = normalized.display;
-        if (normalized.wasCorrected && (labelIndex === 0 || labelIndex === 10)) {
-          console.warn('Corrected EAN-13 barcode to valid checksum', {
+        if (normalized.wasCorrected && (labelIndex === 0 || labelIndex === 10 || labelIndex === 1)) {
+          console.warn(`⚠️ LabelTemplate [index ${labelIndex}] - Corrected EAN-13 barcode to valid checksum`, {
             original: rawCode,
             corrected: normalized.barcode,
+            display: normalized.display,
           });
         }
       } else {
         // If normalization fails, still try to use the raw code
+        // This shouldn't happen for valid 13-digit codes, but handle gracefully
+        console.warn(`⚠️ LabelTemplate [index ${labelIndex}] - Failed to normalize EAN-13 code: ${rawCode}`);
         barcodeValue = rawCode;
         displayCode = rawCode;
       }
@@ -598,21 +603,27 @@ export default function LabelTemplate({
     // No code available
     barcodeValue = '';
     displayCode = '';
+    if (labelIndex === 0 || labelIndex === 10 || labelIndex === 1) {
+      console.warn(`⚠️ LabelTemplate [index ${labelIndex}] - No barcode code found in product`, {
+        product: product ? { keys: Object.keys(product), code: product.code, Code: product.Code } : 'NO PRODUCT'
+      });
+    }
   }
 
   // CRITICAL: Log extracted values to see if data extraction is working
-  if (labelIndex === 0 || labelIndex === 10 || labelIndex === 1) {
+  if (labelIndex === 0 || labelIndex === 10 || labelIndex === 1 || labelIndex === 2) {
     console.log(`🔍 LabelTemplate [index ${labelIndex}] - Extracted values:`, {
+      product: product ? { code: product.code, Code: product.Code, keys: Object.keys(product) } : 'NO PRODUCT',
       code: code || 'EMPTY',
       rawCode: rawCode || 'EMPTY',
       barcodeValue: barcodeValue || 'EMPTY',
       displayCode: displayCode || 'EMPTY',
+      format: format,
       description: description || 'EMPTY',
       price: price || 'EMPTY',
       formattedPrice: formattedPrice || 'EMPTY',
       line1: line1 || 'EMPTY',
       line2: line2 || 'EMPTY',
-      productKeys: product ? Object.keys(product) : []
     });
   }
 
@@ -1022,7 +1033,7 @@ export default function LabelTemplate({
             >
               {barcodeValue ? (
                 <Barcode
-                  key={`barcode-${labelIndex}-${barcodeValue}-${format}`}
+                  key={`barcode-${labelIndex}-${barcodeValue}-${format}-${product?.code || product?.Code || 'no-code'}`}
                   value={barcodeValue}
                   format={format}
                   width={barcodeWidth * widthScale}

@@ -342,6 +342,10 @@ export default function LabelGrid({
             const productId = product
               ? product.code || product.Code || product['Barcode Numbers'] || `prod-${idx}`
               : `empty-${idx}`;
+            
+            // Create a unique key that includes the product code to ensure React re-renders when product changes
+            const productCode = product?.code || product?.Code || product?.['Barcode Numbers'] || '';
+            const labelTemplateKey = `label-template-${uniqueKey}-${productId}-${productCode}-${absoluteIndex}`;
 
             return (
               <div
@@ -372,7 +376,7 @@ export default function LabelGrid({
                 } as React.CSSProperties}
               >
                 <LabelTemplate
-                  key={`label-template-${uniqueKey}-${productId}`}
+                  key={labelTemplateKey}
                   product={product}
                   index={absoluteIndex}
                   template={template}
