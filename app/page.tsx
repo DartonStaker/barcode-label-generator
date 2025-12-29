@@ -29,7 +29,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if ((viewMode === 'default' || viewMode === 'custom') && encodingType === null) {
+    // Only require encoding selection for default mode
+    // Custom mode can work without encoding initially (user can configure it later)
+    if (viewMode === 'default' && encodingType === null) {
       if (pendingViewMode !== viewMode) {
         setPendingViewMode(viewMode);
       }
@@ -461,8 +463,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* File Upload Section - Show for both modes */}
-        {(viewMode === 'default' || viewMode === 'custom') && (
+        {/* File Upload Section - Required for default mode, optional for custom mode */}
+        {viewMode === 'default' && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="mb-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -483,6 +485,76 @@ export default function Home() {
               <input
                 ref={fileInputRef}
                 id="excel-upload"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  cursor-pointer"
+                disabled={loading}
+              />
+            </div>
+
+            {loading && (
+              <div className="text-blue-600 font-medium">Processing file...</div>
+            )}
+
+            {saving && (
+              <div className="text-green-600 font-medium">Saving to database...</div>
+            )}
+
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800">{error}</p>
+              </div>
+            )}
+
+            {products.length > 0 && (
+              <div className="mt-4">
+                <button
+                  onClick={handleClear}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Clear & Upload New File
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Optional File Upload Section for Custom Mode - Show after template is configured */}
+        {viewMode === 'custom' && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-2 border-dashed border-gray-300">
+            <div className="mb-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <label
+                    htmlFor="excel-upload-custom"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Optional: Upload Excel File
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    You can upload an Excel file with barcode data, or manually enter barcode numbers after configuring your template.
+                  </p>
+                </div>
+                {encodingType && (
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  >
+                    Download {ENCODING_OPTIONS[encodingType].label} Import Template
+                  </button>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                id="excel-upload-custom"
                 type="file"
                 accept=".xlsx,.xls"
                 onChange={handleFileUpload}
@@ -545,10 +617,15 @@ export default function Home() {
             <ProductList
               products={products}
               initialTemplateId="custom"
-              encodingType={effectiveEncoding}
+              encodingType={encodingType ?? null}
               onChangeEncoding={() => {
                 setPendingViewMode('custom');
                 setViewMode('encoding');
+              }}
+              onAddProducts={(newProducts) => {
+                setProducts([...products, ...newProducts]);
+                // Save to database
+                saveProductsToDatabase([...products, ...newProducts]);
               }}
             />
           </div>

@@ -13,8 +13,9 @@ import NextImage from 'next/image';
 interface ProductListProps {
   products: Product[];
   initialTemplateId?: string;
-  encodingType: EncodingType;
+  encodingType: EncodingType | null;
   onChangeEncoding: () => void;
+  onAddProducts?: (newProducts: Product[]) => void;
 }
 
 // Helper functions for unit conversion
@@ -71,10 +72,24 @@ const mergeWithDefaultLayout = (layout: FieldLayout): FieldLayout => {
   return merged;
 };
 
-export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding }: ProductListProps) {
+export default function ProductList({ products, initialTemplateId, encodingType, onChangeEncoding, onAddProducts }: ProductListProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId || SELECT_TEMPLATE_OPTION);
-  const encodingInfo = ENCODING_DETAILS[encodingType];
+  const isCustomMode = initialTemplateId === 'custom';
+  
+  // Encoding selection for custom template (local state, can be different from parent)
+  const [customEncodingType, setCustomEncodingType] = useState<EncodingType | null>(encodingType);
+  
+  // Update custom encoding when parent encoding changes
+  useEffect(() => {
+    if (encodingType !== null) {
+      setCustomEncodingType(encodingType);
+    }
+  }, [encodingType]);
+  
+  // Use custom encoding if in custom mode and custom encoding is set, otherwise use parent encoding
+  const effectiveEncoding: EncodingType = (isCustomMode && customEncodingType) ? customEncodingType : (encodingType ?? 'code128');
+  const encodingInfo = ENCODING_DETAILS[effectiveEncoding];
   const barcodeFormat = encodingInfo.barcodeFormat;
   const hasSelectedTemplate = selectedTemplateId !== SELECT_TEMPLATE_OPTION;
   
@@ -582,6 +597,9 @@ export default function ProductList({ products, initialTemplateId, encodingType,
     pageHeight: 29.7, // cm (A4 height)
   });
   
+  const [enableDirectBarcodeInsert, setEnableDirectBarcodeInsert] = useState<boolean>(false);
+  const [manualBarcodes, setManualBarcodes] = useState<string>('');
+  
   // Saved custom templates
   const [savedCustomTemplates, setSavedCustomTemplates] = useState<LabelTemplateConfig[]>([]);
   
@@ -897,7 +915,9 @@ export default function ProductList({ products, initialTemplateId, encodingType,
     `,
   });
 
+  // For custom mode, allow rendering even without products (to show template preview)
   const noProducts = products.length === 0;
+  const isCustomMode = initialTemplateId === 'custom';
   
   // If no products selected or labelsPerPage is 0, don't generate any labels
   // Note: We still continue to calculate values for display, but productsToShow will be empty
@@ -989,7 +1009,8 @@ export default function ProductList({ products, initialTemplateId, encodingType,
     }
   }, [activeLabelIndex, totalLabelsToGenerate]);
 
-  if (noProducts) {
+  // For custom mode, allow rendering even without products (to show template configuration)
+  if (noProducts && !isCustomMode) {
     return null;
   }
 
@@ -1013,41 +1034,46 @@ export default function ProductList({ products, initialTemplateId, encodingType,
 
   return (
     <div className="w-full" style={{ width: '100%', maxWidth: 'none', overflow: 'visible' }}>
-      <div className="mb-6">
-        <div className="flex flex-col gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-blue-800">
-              Encoding: {encodingInfo.label}
-            </p>
-            <p className="text-sm text-blue-700">{encodingInfo.description}</p>
-            <p className="text-xs text-blue-600 mt-1">{encodingInfo.helperText}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-blue-800">
-              <input
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-blue-300 rounded"
-                checked={showHints}
-                onChange={(event) => {
-                  const checked = event.target.checked;
-                  setShowHints(checked);
-                  if (!checked) {
-                    setTemplateHintVisible(false);
-                  }
-                }}
-              />
-              Show hints
-            </label>
-            <button
-              type="button"
-              onClick={onChangeEncoding}
-              className="inline-flex items-center justify-center rounded-md border border-blue-400 bg-white px-4 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:bg-blue-100"
-            >
-              Change Encoding
-            </button>
+      {/* Encoding Banner - Only show if encoding is selected */}
+      {effectiveEncoding && (
+        <div className="mb-6">
+          <div className="flex flex-col gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-800">
+                Encoding: {encodingInfo.label}
+              </p>
+              <p className="text-sm text-blue-700">{encodingInfo.description}</p>
+              {encodingInfo.helperText && (
+                <p className="text-xs text-blue-600 mt-1">{encodingInfo.helperText}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-blue-800">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-blue-300 rounded"
+                  checked={showHints}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setShowHints(checked);
+                    if (!checked) {
+                      setTemplateHintVisible(false);
+                    }
+                  }}
+                />
+                Show hints
+              </label>
+              <button
+                type="button"
+                onClick={onChangeEncoding}
+                className="inline-flex items-center justify-center rounded-md border border-blue-400 bg-white px-4 py-2 text-sm font-medium text-blue-700 shadow-sm transition-colors hover:bg-blue-100"
+              >
+                Change Encoding
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Controls */}
       <div className="mb-6 bg-white rounded-lg shadow-md p-6">
@@ -1427,6 +1453,166 @@ export default function ProductList({ products, initialTemplateId, encodingType,
                     disabled={customTemplateConfig.pageSize !== 'Custom'}
                   />
                 </div>
+              </div>
+              
+              {/* Encoding Selection Section */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3">Barcode Encoding (Optional)</h4>
+                <p className="text-xs text-gray-600 mb-4">
+                  Choose a barcode encoding type to enable barcode generation. You can also upload an Excel file or manually enter barcode numbers.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newEncoding: EncodingType = 'ean13';
+                      setCustomEncodingType(newEncoding);
+                    }}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      customEncodingType === 'ean13'
+                        ? 'border-blue-500 bg-blue-100 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-blue-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        customEncodingType === 'ean13' ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                      }`}>
+                        {customEncodingType === 'ean13' && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">EAN-13</div>
+                        <div className="text-xs text-gray-600">13-digit retail barcodes</div>
+                      </div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newEncoding: EncodingType = 'code128';
+                      setCustomEncodingType(newEncoding);
+                    }}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      customEncodingType === 'code128'
+                        ? 'border-blue-500 bg-blue-100 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-blue-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        customEncodingType === 'code128' ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                      }`}>
+                        {customEncodingType === 'code128' && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">CODE-128</div>
+                        <div className="text-xs text-gray-600">Alphanumeric barcodes</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+                
+                {customEncodingType && (
+                  <div className="mt-4 p-3 bg-white rounded-lg border border-blue-200">
+                    <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        checked={enableDirectBarcodeInsert}
+                        onChange={(e) => setEnableDirectBarcodeInsert(e.target.checked)}
+                      />
+                      Enable Direct Barcode Number Insertion
+                    </label>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Manually enter barcode numbers to create products directly without uploading a file.
+                    </p>
+                    
+                    {enableDirectBarcodeInsert && (
+                      <div className="mt-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                          Enter Barcode Numbers (one per line or comma-separated)
+                        </label>
+                        <textarea
+                          rows={4}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-sm"
+                          placeholder={customEncodingType === 'ean13' 
+                            ? 'Enter 13-digit EAN-13 barcodes, one per line:\n6001234567890\n6001234567891'
+                            : 'Enter CODE-128 barcodes, one per line:\nABC123\nXYZ789'}
+                          value={manualBarcodes}
+                          onChange={(e) => {
+                            setManualBarcodes(e.target.value);
+                          }}
+                        />
+                        {(() => {
+                          const barcodeLines = manualBarcodes.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                          const barcodeCount = barcodeLines.length;
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (barcodeCount === 0) {
+                                    alert('Please enter at least one barcode number');
+                                    return;
+                                  }
+                                  
+                                  // Validate EAN-13 if selected
+                                  if (customEncodingType === 'ean13') {
+                                    const invalidBarcodes = barcodeLines.filter(barcode => !/^\d{13}$/.test(barcode));
+                                    if (invalidBarcodes.length > 0) {
+                                      alert(`Invalid EAN-13 barcodes (must be exactly 13 digits):\n${invalidBarcodes.join('\n')}`);
+                                      return;
+                                    }
+                                  }
+                                  
+                                  // Create products from manual barcodes
+                                  const newProducts: Product[] = barcodeLines.map((barcode, index) => ({
+                                    code: barcode,
+                                    Code: barcode,
+                                    description: `Product ${index + 1}`,
+                                    Description: `Product ${index + 1}`,
+                                    price: '',
+                                    Price: '',
+                                  }));
+                                  
+                                  // Add to existing products via callback
+                                  if (onAddProducts) {
+                                    onAddProducts(newProducts);
+                                    // Select the newly added products
+                                    const newIndices = Array.from({ length: newProducts.length }, (_, i) => products.length + i);
+                                    setSelectedProducts(new Set([...selectedProducts, ...newIndices]));
+                                    // Clear manual barcodes
+                                    setManualBarcodes('');
+                                    alert(`Added ${newProducts.length} product(s) from barcode numbers`);
+                                  } else {
+                                    alert('Cannot add products: callback not available');
+                                  }
+                                }}
+                                className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                                disabled={barcodeCount === 0}
+                              >
+                                Add {barcodeCount} Barcode{barcodeCount !== 1 ? 's' : ''} as Products
+                              </button>
+                              {barcodeCount > 0 && (
+                                <p className="text-xs text-gray-500 mt-2">
+                                  {customEncodingType === 'ean13' 
+                                    ? `EAN-13 barcodes must be exactly 13 digits.`
+                                    : `CODE-128 barcodes can contain letters and numbers.`}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               {/* Save Button */}

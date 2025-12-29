@@ -24,14 +24,24 @@ export default function Barcode({
   useEffect(() => {
     if (barcodeRef.current && value) {
       try {
-        JsBarcode(barcodeRef.current, value, {
+        // For EAN-13, ensure proper formatting with spacing
+        const options: any = {
           format: format,
           width: width,
           height: height,
           displayValue: displayValue,
           margin: 0,
           fontSize: 12,
-        });
+        };
+        
+        // EAN-13 specific options for proper number display
+        if (format === 'EAN13' && displayValue) {
+          options.fontSize = 14;
+          options.textMargin = 2;
+          // JsBarcode automatically formats EAN-13 as: "9 902262 949558"
+        }
+        
+        JsBarcode(barcodeRef.current, value, options);
       } catch (error) {
         console.error('Barcode generation error:', error);
       }

@@ -992,6 +992,7 @@ export default function LabelTemplate({
                 width: '100%',
                 height: '100%',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -1002,7 +1003,7 @@ export default function LabelTemplate({
                   format={format}
                   width={barcodeWidth * widthScale}
                   height={barcodeHeight * heightScale}
-                  displayValue={false}
+                  displayValue={format === 'EAN13'}
                 />
               ) : isFieldEditing ? (
                 <span className="text-xs text-blue-600">Barcode area</span>
