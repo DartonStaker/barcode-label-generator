@@ -1006,25 +1006,6 @@ export default function LabelTemplate({
           { justify: 'flex-start', align: 'flex-start' }
         )}
 
-        {(!fieldVisibility || fieldVisibility.barcodeNumber) && renderField(
-          'code',
-          ({ widthScale, heightScale }) => (
-            <div
-              style={{
-                width: '100%',
-                fontSize: scaleFontSize(codeFontSize, Math.max(widthScale, heightScale)),
-                lineHeight: 1,
-                textAlign: 'center',
-                color: '#000000',
-                wordBreak: 'break-word',
-              }}
-            >
-              {displayCode || (isFieldEditing ? 'Barcode Number' : '')}
-            </div>
-          ),
-          { justify: 'center', align: 'center' }
-        )}
-
         {(!fieldVisibility || fieldVisibility.barcodeImage) && renderField(
           'barcode',
           ({ widthScale, heightScale }) => (
